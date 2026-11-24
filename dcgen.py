@@ -344,6 +344,13 @@ def build_config(catalog, spec):
                 required_by.setdefault(p, []).append(f["id"])
     pkg_list.extend(required_by.keys())
 
+    # packages hard-required by selected addons (e.g. git-credential-libsecret -> libsecret-1-0)
+    addon_apt = {}
+    for aid in spec["addons"]:
+        for pkg in addons[aid].get("apt_packages", []):
+            addon_apt.setdefault(pkg, []).append(aid)
+    pkg_list.extend(addon_apt.keys())
+
     pkg_list = dedupe(pkg_list)
     if pkg_list:
         features_obj[APT_REF] = {"packages": ",".join(pkg_list)}
@@ -354,6 +361,9 @@ def build_config(catalog, spec):
         if required_by:
             bits = ", ".join(f"{p} <- {', '.join(ids)}" for p, ids in sorted(required_by.items()))
             comment += "; required by features: " + bits
+        if addon_apt:
+            bits = ", ".join(f"{p} <- {', '.join(ids)}" for p, ids in sorted(addon_apt.items()))
+            comment += "; required by addons: " + bits
         if spec.get("extra_packages"):
             comment += f" (+{len(spec['extra_packages'])} extra)"
         key_comments[("features", APT_REF)] = comment

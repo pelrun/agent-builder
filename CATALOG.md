@@ -64,7 +64,15 @@ Active: `host-gateway`, `usb-hotplug` / `usb-basic` (mutually exclusive),
 `host-ipc`, `gui-bridge` (X11/Wayland), `pi-env`, `pi-config` (bootstraps +
 mounts `.devcontainer/pi`), `ghidra-mount`, `ghidra-home-env`, `ssh-mount`,
 `uv`, `ghidra-mcp-bridge`, `remote-user`, `polywork-mounts` (machine-specific
-cross-repo mounts used by agent-builder).
+cross-repo mounts used by agent-builder), and `git-credential-libsecret` —
+host libsecret credential helper via D-Bus Secret Service: installs
+`libsecret-1-0` (+ `libsecret-1-dev` / `libglib2.0-dev` build deps as
+`apt_packages`), mounts the host session bus
+(`$XDG_RUNTIME_DIR/bus` → `/tmp/host-dbus/bus`) with
+`DBUS_SESSION_BUS_ADDRESS` set, and builds `git-credential-libsecret`
+post-create from git's `contrib/credential/libsecret` (Debian does not ship
+the binary) into `~/.local/bin`, registering it as a global credential
+helper. Pairs with the host `.gitconfig` that devcontainers copy in.
 
 Deprecated — pending migration of the repos that still use them; do not
 select for new containers:

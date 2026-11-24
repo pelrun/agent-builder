@@ -110,10 +110,12 @@ group order preserved. The generated entry carries a provenance comment:
 ### `addons`
 Named JSON fragments merged by kind: `runArgs`, `mounts`, `containerEnv`,
 `postCreateCommand`, `remoteUser`/`updateRemoteUserUID`. Extras:
-`commented_mounts` / `commented_postcreate` (emitted as `//` lines in presets),
-`conflicts`, `recommends`, `requires_path` (warns when a path is missing in
-the target), `materializes` (addon ensures a directory is bootstrapped from a
-master copy, e.g. pi-config).
+`apt_packages` (addon-level package dependencies, merged into the
+apt-packages entry with provenance), `commented_mounts` /
+`commented_postcreate` (emitted as `//` lines in presets), `conflicts`,
+`recommends`, `requires_path` (warns when a path is missing in the target),
+`materializes` (addon ensures a directory is bootstrapped from a master
+copy, e.g. pi-config).
 
 ### `presets`
 Named, non-interactive selections reproducing the existing repo configs:
