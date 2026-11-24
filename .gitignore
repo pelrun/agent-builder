@@ -23,3 +23,6 @@ pi-master/pi-reach/identity.json
 
 # python
 __pycache__/
+
+# agent-builder generates its own devcontainer (dcgen --preset agent-builder)
+.devcontainer/
