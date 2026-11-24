@@ -1,6 +1,9 @@
 {
 	"version": 1,
 	"base_image": "mcr.microsoft.com/devcontainers/base:trixie",
+	"containerEnv": {
+		"TZ": "Australia/Melbourne"
+	},
 	"features_repo": {
 		"comment": "Where local (repo-owned) features are sourced from: this repo's features/ dir. Candidates are relative to this catalog's directory; ~ paths are host home.",
 		"src_dir": ".",

@@ -365,6 +365,8 @@ def build_config(catalog, spec):
 
     run_args, mounts = [], []
     container_env, post_create = {}, {}
+    # catalog-wide environment first; addons merge after and may override
+    container_env.update(catalog.get("containerEnv", {}))
     for aid in spec["addons"]:
         if aid not in addons:
             sys.exit(f"unknown addon: {aid}")

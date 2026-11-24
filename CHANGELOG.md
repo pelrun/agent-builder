@@ -21,6 +21,9 @@ CATALOG.md, AGENTS.md) describe current state only.
   intentionally drops Ghidra entirely).
 - Documentation restructure: agent-facing fine print split into AGENTS.md;
   docs now carry current state only, history lives here.
+- Catalog-wide `containerEnv` support; sets `TZ: Australia/Melbourne` in
+  every generated container (the container clock was previously UTC, so
+  commits recorded UTC dates after local midnight).
 
 ## 2026-11-24
 

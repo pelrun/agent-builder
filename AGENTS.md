@@ -34,6 +34,10 @@ presets needs no code changes. Rules:
 
 ## Catalog schema
 
+Top-level `containerEnv` is merged into every generated config's
+`containerEnv` (catalog first, addons after and may override) — e.g. the
+universal `TZ: Australia/Melbourne`.
+
 ### `features`
 | Field | Meaning |
 |---|---|
