@@ -2,7 +2,7 @@
 	"version": 1,
 	"base_image": "mcr.microsoft.com/devcontainers/base:trixie",
 	"features_repo": {
-		"comment": "Where local (repo-owned) features are sourced from: this repo's features submodule (the feature-starter repo). Candidates are relative to this catalog's directory; ~ paths are host home. If the submodule is missing run: git submodule update --init.",
+		"comment": "Where local (repo-owned) features are sourced from: this repo's features submodule. Candidates are relative to this catalog's directory; ~ paths are host home. If the submodule is missing run: git submodule update --init.",
 		"src_dir": "src",
 		"candidates": [
 			"features"
@@ -81,7 +81,8 @@
 			"requires": [
 				"node"
 			],
-			"comment": "pi coding agent, npm global install (--ignore-scripts); hard-requires the node feature",
+			"comment": "pi coding agent (npm global install)",
+			"help": "Installed with --ignore-scripts. Hard-requires the node feature: pi runs on Node.js.",
 			"options": {
 				"version": "latest"
 			},
@@ -148,7 +149,8 @@
 			"requires_packages": [
 				"openjdk-25-jdk"
 			],
-			"comment": "Installs Ghidra to /opt/ghidra + an MCP server (MCPSERVER option, default ghidrassist native :8080; ghidramcp fork w/ bridge :8089); GHIDRA_INSTALL_DIR set by the feature; needs a JDK",
+			"comment": "Ghidra + bundled MCP server (needs a JDK)",
+			"help": "Installs Ghidra to /opt/ghidra and sets GHIDRA_INSTALL_DIR. The MCPSERVER option picks the MCP server: 'ghidrassist' (default, native MCP server on :8080) or 'ghidramcp' (fork with bridge on :8089).",
 			"options": {},
 			"prompts": [
 				{
@@ -275,7 +277,8 @@
 		{
 			"id": "usb-hotplug",
 			"default": false,
-			"comment": "USB passthrough incl. devices plugged in after container start",
+			"comment": "USB passthrough, incl. devices plugged in later",
+			"help": "Mounts /dev/bus/usb and grants a usb device-cgroup rule, so devices connected after container start appear automatically. Conflicts with usb-basic.",
 			"runArgs": [
 				"--device-cgroup-rule=c 189:* rmw"
 			],
@@ -289,7 +292,8 @@
 		{
 			"id": "usb-basic",
 			"default": false,
-			"comment": "USB passthrough for devices present at container start only",
+			"comment": "USB passthrough (devices present at start only)",
+			"help": "Mounts /dev/bus/usb at container creation. Devices plugged in afterwards are not visible - use usb-hotplug for that. Conflicts with usb-hotplug.",
 			"runArgs": [
 				"--device=/dev/bus/usb"
 			],
@@ -332,7 +336,8 @@
 		{
 			"id": "pi-config",
 			"default": true,
-			"comment": "Bind-mount the repo's .devcontainer/pi as ~/.pi (materialized from pi-master, copy-if-older)",
+			"comment": "Bind-mount the repo's .devcontainer/pi as ~/.pi",
+			"help": "The mount source is materialized from pi-master on first generation (copy-if-older), so existing runtime state is never overwritten by regeneration.",
 			"mounts": [
 				"source=.devcontainer/pi,target=/home/vscode/.pi,type=bind,consistency=cached"
 			],
@@ -341,7 +346,8 @@
 		{
 			"id": "ghidra-mount",
 			"default": false,
-			"comment": "DEPRECATED (migrate to the ghidra feature): bind-mount host ~/ghidra into the container",
+			"comment": "DEPRECATED (use the ghidra feature): mount host ~/ghidra",
+			"help": "Legacy bind-mount of a host Ghidra install into the container. The ghidra feature installs Ghidra natively instead - migrate.",
 			"mounts": [
 				"source=${localEnv:HOME}/ghidra,target=/home/vscode/ghidra,type=bind,consistency=cached"
 			],
@@ -352,7 +358,8 @@
 		{
 			"id": "ghidra-home-env",
 			"default": false,
-			"comment": "DEPRECATED (migrate to the ghidra feature): point GHIDRA_INSTALL_DIR at the mounted home dir; do not combine with the ghidra feature",
+			"comment": "DEPRECATED (use the ghidra feature): set GHIDRA_INSTALL_DIR",
+			"help": "Points GHIDRA_INSTALL_DIR at the host-mounted Ghidra home dir. Do not combine with the ghidra feature, which sets its own install dir.",
 			"containerEnv": {
 				"GHIDRA_INSTALL_DIR": "/home/vscode/ghidra"
 			}
@@ -361,6 +368,7 @@
 			"id": "ssh-mount",
 			"default": false,
 			"comment": "Bind-mount host ~/.ssh",
+			"help": "Mounts the host ~/.ssh into the container. For HTTPS git auth via the host keyring, prefer git-credential-libsecret.",
 			"mounts": [
 				"source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
 			]
@@ -376,7 +384,8 @@
 		{
 			"id": "ghidra-mcp-bridge",
 			"default": false,
-			"comment": "DEPRECATED (bundled in the ghidra feature): install ghidra-mcp bridge into user python (post-create)",
+			"comment": "DEPRECATED: bundled in the ghidra feature",
+			"help": "Installs the ghidra-mcp bridge into the user python environment (post-create). The ghidra feature now bundles it.",
 			"postCreateCommand": {
 				"ghidra-mcp-bridge": "python3 -m pip install --user --break-system-packages 'git+https://github.com/bethington/ghidra-mcp.git@5f6c416ffe973e834644609aff1a2f7f1b93668e#egg=ghidra-mcp-bridge'"
 			}
@@ -391,7 +400,8 @@
 		{
 			"id": "polywork-mounts",
 			"default": false,
-			"comment": "Machine-specific: mount the other repos into /workspaces (host layout ~/github/*, ~/Projects/*)",
+			"comment": "Machine-specific: mount the other repos into /workspaces",
+			"help": "Bind-mounts the host repo layout (~/github/*, ~/Projects/*) into /workspaces. Only meaningful on machines using that layout.",
 			"mounts": [
 				"source=${localEnv:HOME}/github/blackmagic,target=/workspaces/blackmagic,type=bind,consistency=cached",
 				"source=${localEnv:HOME}/github/headunit,target=/workspaces/headunit,type=bind,consistency=cached",
@@ -405,8 +415,9 @@
 		},
 		{
 			"id": "git-credential-libsecret",
-			"default": false,
-			"comment": "Host libsecret credential helper via D-Bus Secret Service: installs the lib, builds git-credential-libsecret post-create (from git's contrib, into ~/.local/bin) and registers it as a global credential helper (scoped per-repository via credential.useHttpPath); mounts the host session bus",
+			"default": true,
+			"comment": "Host libsecret credential helper over D-Bus",
+			"help": "Installs libsecret-1-0 (+ build deps), mounts the host session bus ($XDG_RUNTIME_DIR/bus -> /tmp/host-dbus/bus, DBUS_SESSION_BUS_ADDRESS set), builds git-credential-libsecret post-create from git's contrib (Debian does not ship the binary) into ~/.local/bin and registers it as the global credential helper. Sets credential.useHttpPath so stored credentials are scoped to the individual repository path.",
 			"apt_packages": [
 				"libsecret-1-0",
 				"libsecret-1-dev",
@@ -419,7 +430,8 @@
 				"DBUS_SESSION_BUS_ADDRESS": "unix:path=/tmp/host-dbus/bus"
 			},
 			"postCreateCommand": {
-				"git-credential-libsecret": "set -e; mkdir -p \"$HOME/.local/bin\"; if [ ! -x \"$HOME/.local/bin/git-credential-libsecret\" ]; then rm -rf \"$HOME/.cache/git-contrib\"; git clone --depth 1 https://github.com/git/git.git \"$HOME/.cache/git-contrib\"; make -C \"$HOME/.cache/git-contrib/contrib/credential/libsecret\"; install -m 0755 \"$HOME/.cache/git-contrib/contrib/credential/libsecret/git-credential-libsecret\" \"$HOME/.local/bin/\"; fi; git config --global --get credential.helper | grep -qx libsecret || git config --global --add credential.helper libsecret; git config --global credential.useHttpPath true"
+				"git-credential-libsecret": "set -e; mkdir -p \"$HOME/.local/bin\"; if [ ! -x \"$HOME/.local/bin/git-credential-libsecret\" ]; then rm -rf \"$HOME/.cache/git-contrib\"; git clone --depth 1 https://github.com/git/git.git \"$HOME/.cache/git-contrib\"; make -C \"$HOME/.cache/git-contrib/contrib/credential/libsecret\"; install -m 0755 \"$HOME/.cache/git-contrib/contrib/credential/libsecret/git-credential-libsecret\" \"$HOME/.local/bin/\"; fi; git config --global --get credential.helper | grep -qx libsecret || git config --global --add credential.helper libsecret",
+				"credential-useHttpPath":"git config --global credential.useHttpPath true"
 			}
 		}
 	],

@@ -539,7 +539,7 @@ class UI:
             stdscr.erase()
             h, w = stdscr.getmaxyx()
             stdscr.addnstr(0, 0, title, w - 1, curses.A_BOLD)
-            stdscr.addnstr(1, 0, "space=toggle  a=all  n=none  arrows=move  enter=confirm", w - 1, curses.A_DIM)
+            stdscr.addnstr(1, 0, "space=toggle  a=all  n=none  arrows=move  h=help  enter=confirm", w - 1, curses.A_DIM)
             row = 3
             for i, it in enumerate(items):
                 if row >= h - 1:
@@ -547,6 +547,8 @@ class UI:
                 mark = "x" if state[it["id"]] else " "
                 lock = " (locked)" if it["id"] in locked else ""
                 line = f"[{mark}] {it['label']}{lock}  -  {it.get('desc', '')}"
+                if it.get("help"):
+                    line += "  (h)"
                 stdscr.addnstr(row, 2, line, w - 3, curses.A_REVERSE if i == cursor else 0)
                 row += 1
             stdscr.refresh()
@@ -568,6 +570,9 @@ class UI:
                         state[it["id"]] = False
             elif ch in (curses.KEY_ENTER, 10, 13, ord("q")):
                 return [it["id"] for it in items if state[it["id"]]]
+            elif ch == ord("h"):
+                it = items[cursor]
+                self._help_popup(stdscr, it["label"], it.get("help", ""))
 
     def _plain_pick(self, title, items, state, locked):
         while True:
@@ -575,8 +580,18 @@ class UI:
             for i, it in enumerate(items, 1):
                 mark = "x" if state[it["id"]] else " "
                 lock = " (locked)" if it["id"] in locked else ""
-                print(f"  [{mark}] {i:2}) {it['label']}{lock}  -  {it.get('desc', '')}")
-            raw = self._input("toggle numbers (e.g. 1 3), a=all, n=none, Enter=done: ").strip().lower()
+                hint = "  (+h)" if it.get("help") else ""
+                print(f"  [{mark}] {i:2}) {it['label']}{lock}  -  {it.get('desc', '')}{hint}")
+            raw = self._input("toggle numbers (e.g. 1 3), a=all, n=none, h N=help, Enter=done: ").strip().lower()
+            if raw.startswith("h"):
+                tail = raw[1:].strip()
+                idx = int(tail) - 1 if tail.isdigit() else None
+                if idx is None or not (0 <= idx < len(items)):
+                    print("usage: h <item number>")
+                else:
+                    it = items[idx]
+                    print(f"\n{it['label']}:\n  {it.get('help') or '(no help available)'}")
+                continue
             if not raw:
                 break
             if raw == "a":
@@ -601,6 +616,34 @@ class UI:
         except (EOFError, KeyboardInterrupt):
             print("\naborted")
             sys.exit(0)
+
+    @staticmethod
+    def _help_popup(stdscr, title, text):
+        import curses
+        import textwrap
+        if not text:
+            text = "(no help available)"
+        h, w = stdscr.getmaxyx()
+        inner_w = max(24, min(78, w - 6))
+        lines = []
+        for para in text.split("\n"):
+            lines.extend(textwrap.wrap(para, inner_w) or [""])
+        lines.append("")
+        lines.append("press any key to close")
+        box_h = min(len(lines) + 2, h - 2)
+        box_w = min(inner_w + 4, w - 2)
+        top = max(0, (h - box_h) // 2)
+        left = max(0, (w - box_w) // 2)
+        try:
+            popup = stdscr.subwin(box_h, box_w, top, left)
+            popup.border()
+            popup.addnstr(0, 2, f" {title} ", max(0, box_w - 4), curses.A_BOLD)
+            for i, ln in enumerate(lines[: box_h - 2]):
+                popup.addnstr(1 + i, 2, ln, max(0, box_w - 3))
+            popup.refresh()
+            stdscr.getch()
+        except curses.error:
+            pass
 
     def ask(self, prompt, default):
         if not self.interactive:
@@ -641,13 +684,13 @@ def interactive_spec(catalog, ui, target, feats_src):
     spec["image"] = ui.ask("Base image", catalog.get("base_image", "mcr.microsoft.com/devcontainers/base:trixie"))
 
     rt_items = [
-        {"id": f["id"], "label": f["id"], "desc": f.get("comment", ""), "checked": f.get("default", False)}
+        {"id": f["id"], "label": f["id"], "desc": f.get("comment", ""), "help": f.get("help", ""), "checked": f.get("default", False)}
         for f in catalog["features"] if f["kind"] == "feature" and not f.get("locked")
     ]
     selected_rt = ui.multi_select("Language runtimes", rt_items)
 
     tool_items = [
-        {"id": f["id"], "label": f["id"], "desc": f.get("comment", ""), "checked": f.get("default", False)}
+        {"id": f["id"], "label": f["id"], "desc": f.get("comment", ""), "help": f.get("help", ""), "checked": f.get("default", False)}
         for f in catalog["features"] if f["kind"] == "local" and not f.get("locked")
     ]
     selected_tools = ui.multi_select("Tool features (copied from the features submodule)", tool_items)
@@ -658,7 +701,8 @@ def interactive_spec(catalog, ui, target, feats_src):
 
     grp_items = [
         {"id": g["id"], "label": g["id"],
-         "desc": ", ".join(g["packages"][:6]) + (" ..." if len(g["packages"]) > 6 else ""),
+         "desc": g.get("comment", ""),
+         "help": "packages: " + ", ".join(g["packages"]),
          "checked": g.get("default", False)}
         for g in catalog["apt_groups"]
     ]
@@ -668,7 +712,7 @@ def interactive_spec(catalog, ui, target, feats_src):
     extra = [p.strip() for p in extra_raw.split(",") if p.strip()]
 
     addon_items = [
-        {"id": a["id"], "label": a["id"], "desc": a.get("comment", ""), "checked": a.get("default", False)}
+        {"id": a["id"], "label": a["id"], "desc": a.get("comment", ""), "help": a.get("help", ""), "checked": a.get("default", False)}
         for a in catalog["addons"]
     ]
     selected_addons = ui.multi_select("Environment addons", addon_items)
@@ -819,11 +863,11 @@ def main():
                 req += "]"
             elif f.get("requires_packages"):
                 req += f" [needs: {','.join(f['requires_packages'])}]"
-            print(f"FEATURE  {f['id']:15} default={'y' if f.get('default') else 'n'}{loc}{lock}{req}  {f.get('comment', '')}")
+            print(f"FEATURE  {f['id']:15} default={'y' if f.get('default') else 'n'}{loc}{lock}{req}  {f.get('comment', '')}{'  (+help)' if f.get('help') else ''}")
         for g in catalog["apt_groups"]:
             print(f"APT      {g['id']:15} default={'y' if g.get('default') else 'n'}  {', '.join(g['packages'])}")
         for a in catalog["addons"]:
-            print(f"ADDON    {a['id']:18} default={'y' if a.get('default') else 'n'}  {a.get('comment', '')}")
+            print(f"ADDON    {a['id']:18} default={'y' if a.get('default') else 'n'}  {a.get('comment', '')}{'  (+help)' if a.get('help') else ''}")
         for name, p in catalog["presets"].items():
             print(f"PRESET   {name:15} features={','.join(p['features'])}  apt={'+'.join(p['apt_groups'])}  addons={','.join(p['addons'])}")
         return 0
