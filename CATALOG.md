@@ -87,7 +87,7 @@ select for new containers:
 
 | Preset | Adds beyond the common base* |
 |---|---|
-| `agent-builder` | `polywork-mounts` (cross-repo mounts, machine-specific) |
+| `agent-builder` | `polywork-mounts` (cross-repo mounts, machine-specific), `git-credential-libsecret` (host keyring credentials + D-Bus) |
 | `blackmagic` | arm-embedded packages |
 | `blepoolsensor` | renode 1.17.0, jdk/arm-embedded/logic-analyzer groups, remote-user, usb-hotplug, host-ipc, gui-bridge, ghidra-mount + ghidra-home-env, ssh-mount, uv, ghidra-mcp-bridge |
 | `cpc-workspace` | cpc-build packages, usb-basic (commented-out cpctelera post-create preserved) |
