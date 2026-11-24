@@ -191,18 +191,21 @@ feature-starter is the source of truth for local features (`pi`, `renode`,
 2. Propagate: `python3 dcgen.py --sync-features <repo>` refreshes every
    `./`-referenced feature in that repo in place (keeps each repo's existing
    path style), or regenerate the repo with its preset.
-3. The ghidra feature installs Ghidra **plus the GhidraMCP stack**: the
-   GhidraMCP extension (unpacked into `Ghidra/Extensions/`, auto-enabled
-   headless), the MCP bridge (pinned fork release, installed system-wide via
-   `uv tool` → `/usr/local/bin/bridge-mcp-ghidra`; uv is self-provisioned at
-   build time since features run before post-create, and declared in the
-   catalog as `requires_addons: ["uv"]` so the uv addon is auto-selected), and
-   one-time PyGhidra enrollment for the target user (piped y/y answers to
-   ghidra's own launcher). The bridge is therefore bundled — the separate
-   `ghidra-mcp-bridge` addon is deprecated (kept only in the blepoolsensor
-   preset until that repo migrates), and the master mcp.json ghidra entry
-   points at `/usr/local/bin/bridge-mcp-ghidra`. Expect a few unauthenticated
-   GitHub API calls per build (ghidra release + ghidra-mcp release assets).
+3. The ghidra feature installs Ghidra plus an MCP server, selected by the
+   `mcpServer` option (feature env `MCPSERVER`, default **`ghidrassist`**):
+   - `ghidrassist` — symgraph/GhidrAssistMCP: native MCP server extension
+     (HTTP :8080, streamable + SSE, no bridge). Release assets are built per
+     Ghidra minor version and the installer picks the matching one.
+   - `ghidramcp` — bethington fork: extension + python bridge on :8089
+     (pinned release built against 12.1.4; uv is self-provisioned at build
+     time, bridge lands at `/usr/local/bin/bridge-mcp-ghidra`).
+   Both paths include one-time PyGhidra enrollment for the target user (piped
+   y/y answers to ghidra's own launcher). The old `ghidra-mcp-bridge` addon is
+   deprecated (kept only in the blepoolsensor preset until that repo
+   migrates); the master mcp.json carries a disabled entry for each server
+   (`ghidrassist` → `:8080/mcp`, `ghidra` → the bridge). Expect a few
+   unauthenticated GitHub API calls per build (ghidra release + MCP release
+   assets).
 
 ## Verifying / migrating existing repos
 

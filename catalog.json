@@ -109,10 +109,15 @@
       "kind": "local",
       "default": false,
       "requires_packages": ["openjdk-25-jdk"],
-      "requires_addons": ["uv"],
-      "comment": "Installs Ghidra to /opt/ghidra + GhidraMCP extension and bridge via uv; GHIDRA_INSTALL_DIR set by the feature; needs a JDK",
+      "comment": "Installs Ghidra to /opt/ghidra + an MCP server (MCPSERVER option, default ghidrassist native :8080; ghidramcp fork w/ bridge :8089); GHIDRA_INSTALL_DIR set by the feature; needs a JDK",
       "options": {},
       "prompts": [
+        {
+          "option": "mcpServer",
+          "prompt": "MCP server stack (ghidrassist = native extension :8080; ghidramcp = fork + bridge :8089)",
+          "default": "ghidrassist",
+          "proposals": ["ghidrassist", "ghidramcp"]
+        },
         {
           "option": "version",
           "prompt": "Ghidra version ('none' skips download; URL resolved via GitHub releases API)",
