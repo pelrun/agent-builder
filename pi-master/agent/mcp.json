@@ -40,6 +40,12 @@
       "args": ["--from", "docling-mcp", "docling-mcp-server"],
       "description": "Docling - convert PDFs to agent-readable markdown (used in agent-builder/blackmagic/headunit)"
     },
+    "ghidrassist": {
+      "enabled": false,
+      "type": "http",
+      "url": "http://127.0.0.1:8080/mcp",
+      "description": "GhidrAssistMCP — native MCP server inside Ghidra (103 tools, streamable HTTP + SSE on :8080). Install via the ghidra feature with MCPSERVER=ghidrassist; server starts with Ghidra (project manager) or headless via the GAMCPStartServerScript pre-script. Requires Ghidra running with a program open for data tools. (alternative to the ghidra entry)"
+    },
     "ghidra": {
       "enabled": false,
       "type": "stdio",
@@ -47,7 +53,7 @@
       "env": {
         "GHIDRA_MCP_URL": "http://127.0.0.1:8089"
       },
-      "description": "GhidraMCP (bethington fork) — decompile, list/rename functions, symbols, xrefs, types in the Ghidra DB. Bridge + Ghidra extension are installed by the ghidra feature (bridge at /usr/local/bin/bridge-mcp-ghidra). Requires Ghidra running with the GhidraMCP server started (HTTP API on 127.0.0.1:8089); call connect_instance first — the headless server registers as project \"unknown\". (used in blepoolsensor)"
+      "description": "GhidraMCP (bethington fork) — decompile, list/rename functions, symbols, xrefs, types in the Ghidra DB. Bridge + Ghidra extension are installed by the ghidra feature (MCPSERVER=ghidramcp; bridge at /usr/local/bin/bridge-mcp-ghidra). Requires Ghidra running with the GhidraMCP server started (HTTP API on 127.0.0.1:8089); call connect_instance first — the headless server registers as project \"unknown\". (used in blepoolsensor)"
     },
     "gdb": {
       "enabled": false,
