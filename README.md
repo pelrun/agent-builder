@@ -13,6 +13,12 @@ agent-builder/
 └── .gitignore       # keeps credential files in pi-master out of git
 ```
 
+This repo **self-hosts**: its own `.devcontainer/` is generated output
+(gitignored) — `python3 dcgen.py --preset agent-builder` reproduces it,
+including the pi feature and the cross-repo `polywork-mounts` addon. The
+`.devcontainer/pi/` runtime state bootstraps from `pi-master/` on first
+generation and is never touched afterwards.
+
 Local (repo-owned) features are **sourced from feature-starter** — the canonical
 feature repo — and copied into the target repo at generation time. The catalog
 finds feature-starter by trying candidates in order (paths with `~` are host
