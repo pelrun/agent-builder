@@ -1,0 +1,324 @@
+{
+  "version": 1,
+  "base_image": "mcr.microsoft.com/devcontainers/base:trixie",
+  "features_repo": {
+    "comment": "Where local (repo-owned) features are sourced from. Candidates are tried in order; ~ paths are host home, relative paths are relative to this catalog's directory.",
+    "src_dir": "src",
+    "candidates": [
+      "../feature-starter",
+      "~/github/feature-starter",
+      "~/Projects/feature-starter"
+    ]
+  },
+  "pi_master": {
+    "comment": "Seed for each repo's .devcontainer/pi (bind-mounted as ~/.pi). Includes shared credentials (auth.json, models-store.json, pi-reach/) - do not commit publicly. Sync semantics: generation materializes ONLY when .devcontainer/pi is missing/empty (bootstrap); afterwards it is never touched except via explicit --sync-pi (copy-if-older, never deletes target-only files).",
+    "candidates": ["pi-master"]
+  },
+  "features": [
+    {
+      "id": "common-utils",
+      "kind": "feature",
+      "ref": "ghcr.io/devcontainers/features/common-utils:2",
+      "default": true,
+      "locked": true,
+      "comment": "Non-root user + passwordless sudo + common CLI utils",
+      "options": {}
+    },
+    {
+      "id": "node",
+      "kind": "feature",
+      "ref": "ghcr.io/devcontainers/features/node:2",
+      "default": true,
+      "comment": "Node.js via nvm; global npm installs work without sudo",
+      "options": { "version": "26", "nodeGypDependencies": true, "pnpmVersion": "none" },
+      "prompts": [
+        {
+          "option": "version",
+          "prompt": "Node.js version",
+          "default": "26",
+          "proposals": ["26", "24", "22", "lts"]
+        }
+      ]
+    },
+    {
+      "id": "python",
+      "kind": "feature",
+      "ref": "ghcr.io/devcontainers/features/python:1",
+      "default": true,
+      "comment": "os-provided matches apt's python3 exactly",
+      "options": { "version": "os-provided", "installTools": false },
+      "prompts": [
+        {
+          "option": "version",
+          "prompt": "Python version",
+          "default": "os-provided",
+          "proposals": ["os-provided", "3.13", "3.12", "3.11"]
+        }
+      ]
+    },
+    {
+      "id": "pi",
+      "kind": "local",
+      "default": true,
+      "locked": true,
+      "requires": ["node"],
+      "comment": "pi coding agent, npm global install (--ignore-scripts); hard-requires the node feature",
+      "options": { "version": "latest" },
+      "prompts": [
+        {
+          "option": "version",
+          "prompt": "pi-coding-agent version",
+          "default": "latest",
+          "proposals": ["latest"]
+        }
+      ]
+    },
+    {
+      "id": "renode",
+      "kind": "local",
+      "default": false,
+      "comment": "Renode portable simulator + GTK/X11 deps + Robot Framework",
+      "options": { "version": "1.17.0" },
+      "prompts": [
+        {
+          "option": "version",
+          "prompt": "Renode version",
+          "default": "1.17.0",
+          "proposals": ["1.17.0", "1.16.0"]
+        }
+      ]
+    },
+    {
+      "id": "jadx",
+      "kind": "local",
+      "default": false,
+      "requires_packages": ["openjdk-25-jdk"],
+      "comment": "jadx dex-to-java decompiler (needs a JDK)",
+      "options": { "jadxVersion": "1.5.6" },
+      "prompts": [
+        {
+          "option": "jadxVersion",
+          "prompt": "jadx version",
+          "default": "1.5.6",
+          "proposals": ["1.5.6", "1.5.5", "latest", "none"]
+        }
+      ]
+    },
+    {
+      "id": "ghidra",
+      "kind": "local",
+      "default": false,
+      "requires_packages": ["openjdk-25-jdk"],
+      "requires_addons": ["uv"],
+      "comment": "Installs Ghidra to /opt/ghidra + GhidraMCP extension and bridge via uv; GHIDRA_INSTALL_DIR set by the feature; needs a JDK",
+      "options": {},
+      "prompts": [
+        {
+          "option": "version",
+          "prompt": "Ghidra version ('none' skips download; URL resolved via GitHub releases API)",
+          "default": "latest",
+          "proposals": ["latest", "12.2", "12.1.4", "none"]
+        }
+      ]
+    }
+  ],
+  "apt_groups": [
+    {
+      "id": "core",
+      "default": true,
+      "locked": true,
+      "comment": "Core build + CLI toolset",
+      "packages": ["build-essential", "binutils", "file", "kitty-terminfo", "xxd", "vim", "ripgrep", "jq", "curl", "unzip", "less"]
+    },
+    {
+      "id": "arm-embedded",
+      "default": false,
+      "comment": "ARM Cortex-M embedded toolchain + pyOCD debug",
+      "packages": ["gcc-arm-none-eabi", "binutils-arm-none-eabi", "gdb-multiarch", "python3-pyocd"]
+    },
+    {
+      "id": "arm-cross-binutils",
+      "default": false,
+      "comment": "Cross binutils only (aarch64 + armhf object inspection)",
+      "packages": ["binutils-aarch64-linux-gnu", "binutils-arm-linux-gnueabihf"]
+    },
+    {
+      "id": "android-re",
+      "default": false,
+      "comment": "Android reverse engineering (apktool, smali, adb, capstone...)",
+      "packages": ["aapt", "apktool", "dexdump", "libsmali-java", "zstd", "ltrace", "adb", "e2fsprogs", "openjdk-25-jdk", "python3-capstone", "libcapstone-dev"]
+    },
+    {
+      "id": "logic-analyzer",
+      "default": false,
+      "comment": "sigrok CLI logic analyzer + fx2lafw firmware",
+      "packages": ["sigrok-cli", "sigrok-firmware-fx2lafw"]
+    },
+    {
+      "id": "cpc-build",
+      "default": false,
+      "comment": "Deps for building SDCC/CPCtelera from source",
+      "packages": ["bison", "flex", "clang", "libboost-dev", "zlib1g-dev", "libfreeimage-dev"]
+    },
+    {
+      "id": "jdk",
+      "default": false,
+      "comment": "OpenJDK 25",
+      "packages": ["openjdk-25-jdk"]
+    }
+  ],
+  "addons": [
+    {
+      "id": "host-gateway",
+      "default": true,
+      "comment": "host.docker.internal resolves to the host",
+      "runArgs": ["--add-host=host.docker.internal:host-gateway"]
+    },
+    {
+      "id": "usb-hotplug",
+      "default": false,
+      "comment": "USB passthrough incl. devices plugged in after container start",
+      "runArgs": ["--device-cgroup-rule=c 189:* rmw"],
+      "mounts": ["source=/dev/bus/usb,target=/dev/bus/usb,type=bind"],
+      "conflicts": ["usb-basic"]
+    },
+    {
+      "id": "usb-basic",
+      "default": false,
+      "comment": "USB passthrough for devices present at container start only",
+      "runArgs": ["--device=/dev/bus/usb"],
+      "conflicts": ["usb-hotplug"]
+    },
+    {
+      "id": "host-ipc",
+      "default": false,
+      "comment": "Share host IPC namespace",
+      "runArgs": ["--ipc=host"]
+    },
+    {
+      "id": "gui-bridge",
+      "default": false,
+      "comment": "X11/Wayland GUI apps from host display",
+      "containerEnv": {
+        "XDG_RUNTIME_DIR": "/tmp",
+        "WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}",
+        "DISPLAY": "${localEnv:DISPLAY}",
+        "GDK_BACKEND": "x11"
+      },
+      "mounts": [
+        "source=${localEnv:XDG_RUNTIME_DIR}/${localEnv:WAYLAND_DISPLAY},target=/tmp/${localEnv:WAYLAND_DISPLAY},type=bind",
+        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind"
+      ]
+    },
+    {
+      "id": "pi-env",
+      "default": true,
+      "comment": "Silence pi-agent / npm version nagging",
+      "containerEnv": {
+        "PI_SKIP_VERSION_CHECK": "1",
+        "NPM_CONFIG_UPDATE_NOTIFIER": "false"
+      }
+    },
+    {
+      "id": "pi-config",
+      "default": true,
+      "comment": "Bind-mount the repo's .devcontainer/pi as ~/.pi (materialized from pi-master, copy-if-older)",
+      "mounts": ["source=.devcontainer/pi,target=/home/vscode/.pi,type=bind,consistency=cached"],
+      "materializes": ".devcontainer/pi"
+    },
+    {
+      "id": "ghidra-mount",
+      "default": false,
+      "comment": "DEPRECATED (migrate to the ghidra feature): bind-mount host ~/ghidra into the container",
+      "mounts": ["source=${localEnv:HOME}/ghidra,target=/home/vscode/ghidra,type=bind,consistency=cached"],
+      "recommends": ["ghidra"]
+    },
+    {
+      "id": "ghidra-home-env",
+      "default": false,
+      "comment": "DEPRECATED (migrate to the ghidra feature): point GHIDRA_INSTALL_DIR at the mounted home dir; do not combine with the ghidra feature",
+      "containerEnv": { "GHIDRA_INSTALL_DIR": "/home/vscode/ghidra" }
+    },
+    {
+      "id": "ssh-mount",
+      "default": false,
+      "comment": "Bind-mount host ~/.ssh",
+      "mounts": ["source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"]
+    },
+    {
+      "id": "uv",
+      "default": false,
+      "comment": "Install uv (post-create)",
+      "postCreateCommand": { "uv": "pip install --break-system-packages uv" }
+    },
+    {
+      "id": "ghidra-mcp-bridge",
+      "default": false,
+      "comment": "DEPRECATED (bundled in the ghidra feature): install ghidra-mcp bridge into user python (post-create)",
+      "postCreateCommand": {
+        "ghidra-mcp-bridge": "python3 -m pip install --user --break-system-packages 'git+https://github.com/bethington/ghidra-mcp.git@5f6c416ffe973e834644609aff1a2f7f1b93668e#egg=ghidra-mcp-bridge'"
+      }
+    },
+    {
+      "id": "remote-user",
+      "default": false,
+      "comment": "Run as vscode user, match host UID",
+      "remoteUser": "vscode",
+      "updateRemoteUserUID": true
+    },
+    {
+      "id": "polywork-mounts",
+      "default": false,
+      "comment": "Machine-specific: mount the other repos into /workspaces (host layout ~/github/*, ~/Projects/*)",
+      "mounts": [
+        "source=${localEnv:HOME}/github/blackmagic,target=/workspaces/blackmagic,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/github/headunit,target=/workspaces/headunit,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/github/cpc-workspace,target=/workspaces/cpc-workspace,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/github/feature-starter,target=/workspaces/feature-starter,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/Projects/nas-cleanup,target=/workspaces/nas-cleanup,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/Projects/blepoolsensor,target=/workspaces/blepoolsensor,type=bind,consistency=cached"
+      ],
+      "commented_mounts": [
+        "source=${localEnv:HOME}/github/esphome,target=/workspaces/esphome,type=bind,consistency=cached"
+      ]
+    }
+  ],
+  "presets": {
+    "agent-builder": {
+      "name": "agent-builder",
+      "features": { "common-utils": {}, "node": {}, "python": {}, "pi": {} },
+      "apt_groups": ["core"],
+      "addons": ["host-gateway", "pi-env", "pi-config", "polywork-mounts"]
+    },
+    "blackmagic": {
+      "name": "blackmagic",
+      "features": { "common-utils": {}, "node": {}, "python": {}, "pi": {} },
+      "apt_groups": ["core", "arm-embedded"],
+      "addons": ["host-gateway", "pi-env", "pi-config"]
+    },
+    "blepoolsensor": {
+      "name": "poolsensor",
+      "features": { "common-utils": {}, "node": {}, "python": {}, "pi": {}, "renode": { "version": "1.17.0" } },
+      "apt_groups": ["core", "jdk", "arm-embedded", "logic-analyzer"],
+      "addons": ["remote-user", "host-gateway", "usb-hotplug", "host-ipc", "gui-bridge", "pi-config", "ghidra-mount", "ghidra-home-env", "ssh-mount", "uv", "ghidra-mcp-bridge"]
+    },
+    "cpc-workspace": {
+      "name": "cpc-workspace",
+      "features": { "common-utils": {}, "node": {}, "python": {}, "pi": {} },
+      "apt_groups": ["core", "cpc-build"],
+      "addons": ["host-gateway", "usb-basic", "pi-env"]
+    },
+    "headunit": {
+      "name": "car-headunit",
+      "features": { "common-utils": {}, "node": {}, "python": {}, "pi": {}, "ghidra": {}, "jadx": { "jadxVersion": "1.5.6" } },
+      "apt_groups": ["core", "arm-embedded", "arm-cross-binutils", "android-re"],
+      "addons": ["host-gateway", "pi-env", "pi-config", "ghidra-mount"]
+    },
+    "nas-cleanup": {
+      "name": "nas-cleanup",
+      "features": { "common-utils": {}, "node": {}, "python": {}, "pi": {} },
+      "apt_groups": ["core"],
+      "addons": ["host-gateway", "usb-basic", "pi-config", "ghidra-mount", "ghidra-home-env", "ssh-mount"]
+    }
+  }
+}

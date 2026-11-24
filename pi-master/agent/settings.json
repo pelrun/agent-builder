@@ -1,0 +1,26 @@
+{
+  "lastChangelogVersion": "1.6.0",
+  "packages": [
+    "npm:pi-subagents",
+    "npm:pi-mcp-adapter",
+    "npm:@narumitw/pi-usage"
+  ],
+  "defaultTools": [
+    "+codemode",
+    "+grep",
+    "+find"
+  ],
+  "enabledModels": [
+    "zai/glm-5.3-flash",
+    "strata/qwen3.8-flash-next-iq3_xxs",
+    "zai/glm-5.3"
+  ],
+  "extensionChangelogVersions": {
+    "{\"source\":\"npm:pi-subagents\",\"scope\":\"user\"}": "0.89.2",
+    "{\"source\":\"npm:pi-mcp-adapter\",\"scope\":\"user\"}": "7.0.1",
+    "{\"source\":\"npm:@narumitw/pi-usage\",\"scope\":\"user\"}": "0.69.3"
+  },
+  "extensions": [
+    "-builtin:mcp"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "mcpServers": {
+    "zai-search": {
+      "type": "http",
+      "url": "https://api.z.ai/api/mcp/web_search_prime/mcp",
+      "headers": {
+        "Authorization": "!echo Bearer $(jq -r '.zai.key' ~/.pi/agent/auth.json)"
+      },
+      "description": "Z.ai web search (web_search_prime) with domain and recency filters"
+    },
+    "zai-reader": {
+      "type": "http",
+      "url": "https://api.z.ai/api/mcp/web_reader/mcp",
+      "headers": {
+        "Authorization": "!echo Bearer $(jq -r '.zai.key' ~/.pi/agent/auth.json)"
+      },
+      "description": "Z.ai URL reader — fetch a web page as clean markdown/text"
+    },
+    "zai-zread": {
+      "type": "http",
+      "url": "https://api.z.ai/api/mcp/zread/mcp",
+      "headers": {
+        "Authorization": "!echo Bearer $(jq -r '.zai.key' ~/.pi/agent/auth.json)"
+      },
+      "description": "Z.ai zread — search public GitHub repositories, read files, list directories"
+    },
+    "zai-vision": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@z_ai/mcp-server"],
+      "env": {
+        "Z_AI_MODE": "ZAI",
+        "Z_AI_API_KEY": "!jq -r '.zai.key' ~/.pi/agent/auth.json"
+      },
+      "description": "Z.ai vision (GLM) — image/video analysis: UI-to-code, OCR, error screenshot diagnosis, diagrams, charts, UI diff"
+    },
+    "docling": {
+      "command": "uvx",
+      "args": ["--from", "docling-mcp", "docling-mcp-server"],
+      "description": "Docling - convert PDFs to agent-readable markdown"
+    }
+  }
+}

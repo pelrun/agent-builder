@@ -1,0 +1,8 @@
+./github/blackmagic/.devcontainer
+./github/headunit/.devcontainer
+./github/cpc-workspace/.devcontainer
+./github/feature-starter/.devcontainer
+./github/esphome/.devcontainer
+./Projects/nas-cleanup/.devcontainer
+./Projects/blepoolsensor/.devcontainer
+./Projects/agent-builder/.devcontainer

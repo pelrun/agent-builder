@@ -1,0 +1,72 @@
+{
+  "mcpServers": {
+    "zai-search": {
+      "type": "http",
+      "url": "https://api.z.ai/api/mcp/web_search_prime/mcp",
+      "headers": {
+        "Authorization": "!echo Bearer $(jq -r '.zai.key' ~/.pi/agent/auth.json)"
+      },
+      "description": "Z.ai web search (web_search_prime) with domain and recency filters"
+    },
+    "zai-reader": {
+      "type": "http",
+      "url": "https://api.z.ai/api/mcp/web_reader/mcp",
+      "headers": {
+        "Authorization": "!echo Bearer $(jq -r '.zai.key' ~/.pi/agent/auth.json)"
+      },
+      "description": "Z.ai URL reader — fetch a web page as clean markdown/text"
+    },
+    "zai-zread": {
+      "type": "http",
+      "url": "https://api.z.ai/api/mcp/zread/mcp",
+      "headers": {
+        "Authorization": "!echo Bearer $(jq -r '.zai.key' ~/.pi/agent/auth.json)"
+      },
+      "description": "Z.ai zread — search public GitHub repositories, read files, list directories"
+    },
+    "zai-vision": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@z_ai/mcp-server"],
+      "env": {
+        "Z_AI_MODE": "ZAI",
+        "Z_AI_API_KEY": "!jq -r '.zai.key' ~/.pi/agent/auth.json"
+      },
+      "description": "Z.ai vision (GLM) — image/video analysis: UI-to-code, OCR, error screenshot diagnosis, diagrams, charts, UI diff"
+    },
+    "docling": {
+      "enabled": false,
+      "command": "uvx",
+      "args": ["--from", "docling-mcp", "docling-mcp-server"],
+      "description": "Docling - convert PDFs to agent-readable markdown (used in agent-builder/blackmagic/headunit)"
+    },
+    "ghidra": {
+      "enabled": false,
+      "type": "stdio",
+      "command": "/usr/local/bin/bridge-mcp-ghidra",
+      "env": {
+        "GHIDRA_MCP_URL": "http://127.0.0.1:8089"
+      },
+      "description": "GhidraMCP (bethington fork) — decompile, list/rename functions, symbols, xrefs, types in the Ghidra DB. Bridge + Ghidra extension are installed by the ghidra feature (bridge at /usr/local/bin/bridge-mcp-ghidra). Requires Ghidra running with the GhidraMCP server started (HTTP API on 127.0.0.1:8089); call connect_instance first — the headless server registers as project \"unknown\". (used in blepoolsensor)"
+    },
+    "gdb": {
+      "enabled": false,
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/BeaCox/gdb-mcp.git@v0.4.0",
+        "gdb-mcp",
+        "--unsafe"
+      ],
+      "description": "GDB/MI multi-session debugger for local binaries, core dumps, and gdbserver targets (used in blepoolsensor)"
+    },
+    "logic-analyzer": {
+      "enabled": false,
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--no-dev", "python", "-m", "logic_analyzer_mcp", "--stdio"],
+      "cwd": "/workspaces/blepoolsensor/logic-analyzer-mcp",
+      "description": "USB logic analyzer via sigrok or simulator: capture digital signals and decode UART, I2C, SPI. Project-bound: cwd points at the blepoolsensor logic-analyzer-mcp checkout — adjust cwd or copy the project before enabling elsewhere. (used in blepoolsensor)"
+    }
+  }
+}

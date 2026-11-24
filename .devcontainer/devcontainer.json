@@ -1,0 +1,48 @@
+{
+	"name": "agent-builder",
+	"image": "mcr.microsoft.com/devcontainers/base:trixie",
+
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {},
+
+		"ghcr.io/devcontainers/features/node:2": {
+			"version": "26",
+			"nodeGypDependencies": true,
+			"pnpmVersion": "none"
+		},
+
+		"ghcr.io/devcontainers/features/python:1": {
+			"version": "os-provided",
+			"installTools": false
+		},
+
+		"ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+			"packages": "build-essential,binutils,file,kitty-terminfo,xxd,vim,ripgrep,jq,curl,unzip,less"
+		}
+
+	},
+
+	"runArgs": [
+		"--add-host=host.docker.internal:host-gateway"
+	],
+
+	"containerEnv": {
+		"PI_SKIP_VERSION_CHECK": "1",
+		"NPM_CONFIG_UPDATE_NOTIFIER": "false"
+	},
+
+	"postCreateCommand": {
+	 	"pi-agent": "npm install -g --ignore-scripts @earendil-works/pi-coding-agent"
+	},
+
+	"mounts": [
+		"source=.devcontainer/pi,target=/home/vscode/.pi,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/github/blackmagic,target=/workspaces/blackmagic,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/github/headunit,target=/workspaces/headunit,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/github/cpc-workspace,target=/workspaces/cpc-workspace,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/github/feature-starter,target=/workspaces/feature-starter,type=bind,consistency=cached",
+//    "source=${localEnv:HOME}/github/esphome,target=/workspaces/esphome,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/Projects/nas-cleanup,target=/workspaces/nas-cleanup,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/Projects/blepoolsensor,target=/workspaces/blepoolsensor,type=bind,consistency=cached"
+	]
+}
