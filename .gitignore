@@ -1,28 +1,11 @@
 # Credential-bearing files in the pi master copy (shared secrets - never commit)
 pi-master/agent/auth.json
 pi-master/agent/models-store.json
-pi-master/pi-reach/identity.json
-
-# agent-builder's own .devcontainer/pi: credentials + runtime state
-# (config files ARE committed; this mirrors the pi-master exclusions)
-.devcontainer/pi/agent/auth.json
-.devcontainer/pi/agent/auth.json.bak
-.devcontainer/pi/agent/models-store.json
-.devcontainer/pi/agent/models.json.bak
-.devcontainer/pi/pi-reach/identity.json
-.devcontainer/pi/agent/sessions/
-.devcontainer/pi/agent/missions/
-.devcontainer/pi/agent/crashes.json
-.devcontainer/pi/agent/mcp-cache.json
-.devcontainer/pi/agent/mcp-last-seen-version.json
-.devcontainer/pi/agent/mcp-npx-cache.json
-.devcontainer/pi/agent/mcp-onboarding.json
-.devcontainer/pi/agent/pi-subagents/
-.devcontainer/pi/agent/npm/node_modules/
-.devcontainer/pi/agent/bin/__pycache__/
+pi-master/pi-reach/
 
 # python
 __pycache__/
 
 # agent-builder generates its own devcontainer (dcgen --preset agent-builder)
 .devcontainer/
+.pi/
