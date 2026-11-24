@@ -325,15 +325,6 @@
 			]
 		},
 		{
-			"id": "pi-env",
-			"default": true,
-			"comment": "Silence pi-agent / npm version nagging",
-			"containerEnv": {
-				"PI_SKIP_VERSION_CHECK": "1",
-				"NPM_CONFIG_UPDATE_NOTIFIER": "false"
-			}
-		},
-		{
 			"id": "pi-config",
 			"default": true,
 			"comment": "Bind-mount the repo's .devcontainer/pi as ~/.pi",
@@ -341,28 +332,11 @@
 			"mounts": [
 				"source=.devcontainer/pi,target=/home/vscode/.pi,type=bind,consistency=cached"
 			],
-			"materializes": ".devcontainer/pi"
-		},
-		{
-			"id": "ghidra-mount",
-			"default": false,
-			"comment": "DEPRECATED (use the ghidra feature): mount host ~/ghidra",
-			"help": "Legacy bind-mount of a host Ghidra install into the container. The ghidra feature installs Ghidra natively instead - migrate.",
-			"mounts": [
-				"source=${localEnv:HOME}/ghidra,target=/home/vscode/ghidra,type=bind,consistency=cached"
-			],
-			"recommends": [
-				"ghidra"
-			]
-		},
-		{
-			"id": "ghidra-home-env",
-			"default": false,
-			"comment": "DEPRECATED (use the ghidra feature): set GHIDRA_INSTALL_DIR",
-			"help": "Points GHIDRA_INSTALL_DIR at the host-mounted Ghidra home dir. Do not combine with the ghidra feature, which sets its own install dir.",
 			"containerEnv": {
-				"GHIDRA_INSTALL_DIR": "/home/vscode/ghidra"
-			}
+				"PI_SKIP_VERSION_CHECK": "1",
+				"NPM_CONFIG_UPDATE_NOTIFIER": "false"
+			},
+			"materializes": ".devcontainer/pi"
 		},
 		{
 			"id": "ssh-mount",
@@ -379,15 +353,6 @@
 			"comment": "Install uv (post-create)",
 			"postCreateCommand": {
 				"uv": "pip install --break-system-packages uv"
-			}
-		},
-		{
-			"id": "ghidra-mcp-bridge",
-			"default": false,
-			"comment": "DEPRECATED: bundled in the ghidra feature",
-			"help": "Installs the ghidra-mcp bridge into the user python environment (post-create). The ghidra feature now bundles it.",
-			"postCreateCommand": {
-				"ghidra-mcp-bridge": "python3 -m pip install --user --break-system-packages 'git+https://github.com/bethington/ghidra-mcp.git@5f6c416ffe973e834644609aff1a2f7f1b93668e#egg=ghidra-mcp-bridge'"
 			}
 		},
 		{
@@ -449,7 +414,6 @@
 			],
 			"addons": [
 				"host-gateway",
-				"pi-env",
 				"pi-config",
 				"polywork-mounts",
 				"git-credential-libsecret"
@@ -469,8 +433,8 @@
 			],
 			"addons": [
 				"host-gateway",
-				"pi-env",
-				"pi-config"
+				"pi-config",
+				"git-credential-libsecret"
 			]
 		},
 		"blepoolsensor": {
@@ -482,6 +446,9 @@
 				"pi": {},
 				"renode": {
 					"version": "1.17.0"
+				},
+				"ghidra": {
+					"mcpServer": "ghidramcp"
 				}
 			},
 			"apt_groups": [
@@ -491,17 +458,14 @@
 				"logic-analyzer"
 			],
 			"addons": [
-				"remote-user",
 				"host-gateway",
 				"usb-hotplug",
 				"host-ipc",
 				"gui-bridge",
 				"pi-config",
-				"ghidra-mount",
-				"ghidra-home-env",
 				"ssh-mount",
 				"uv",
-				"ghidra-mcp-bridge"
+				"git-credential-libsecret"
 			]
 		},
 		"cpc-workspace": {
@@ -519,7 +483,8 @@
 			"addons": [
 				"host-gateway",
 				"usb-basic",
-				"pi-env"
+				"pi-config",
+				"git-credential-libsecret"
 			]
 		},
 		"headunit": {
@@ -542,9 +507,8 @@
 			],
 			"addons": [
 				"host-gateway",
-				"pi-env",
 				"pi-config",
-				"ghidra-mount"
+				"git-credential-libsecret"
 			]
 		},
 		"nas-cleanup": {
@@ -560,10 +524,8 @@
 			],
 			"addons": [
 				"host-gateway",
-				"usb-basic",
 				"pi-config",
-				"ghidra-mount",
-				"ghidra-home-env",
+				"git-credential-libsecret",
 				"ssh-mount"
 			]
 		}

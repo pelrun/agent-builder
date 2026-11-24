@@ -23,13 +23,11 @@ Policies:
 
 - **`java` feature deliberately absent.** The ghcr.io java feature is far
   slower to build than installing `openjdk-25-jdk` as a package — use the
-  `jdk` apt group (or `android-re`, which includes it).
+  `jdk` apt group instead.
 - **`pi` is locked** (always installed, hidden from pickers and prompts,
   version `latest`) with node as a hard feature dependency.
-- **`ghidra`** installs Ghidra to `/opt/ghidra` (download URL resolved via the
-  GitHub releases API — release filenames embed a build date, so the URL is
-  not derivable from the version) plus an MCP server selected by the
-  `mcpServer` option (feature env `MCPSERVER`, default **`ghidrassist`**):
+- **`ghidra`** installs Ghidra plus an MCP server selected by the
+  `mcpServer` option:
 
   | Option | Stack | Transport | Notes |
   |---|---|---|---|
@@ -54,7 +52,7 @@ Policies:
 | `cpc-build` | bison, flex, clang, libboost-dev, zlib1g-dev, libfreeimage-dev | SDCC/CPCtelera build deps |
 | `jdk` | openjdk-25-jdk | standalone JDK |
 
-Selected groups merge into one deduplicated `apt-packages` entry.
+Selected groups currently merge into one deduplicated `apt-packages` entry.
 
 ## Addons
 
@@ -74,9 +72,6 @@ Default ✓ = pre-checked in the wizard.
 | `polywork-mounts` | | machine-specific: mount the other repos into `/workspaces` (host layout `~/github/*`, `~/Projects/*`) |
 | `git-credential-libsecret` | ✓ | host libsecret credential helper over D-Bus: mounts the host session bus, builds the helper post-create from git's `contrib` (Debian does not ship the binary), registers it globally with `credential.useHttpPath` (per-repo credential scoping); pairs with the host `.gitconfig` that devcontainers copy in |
 
-Removed with the ghidra migration: `ghidra-mount`, `ghidra-home-env`,
-`ghidra-mcp-bridge` (superseded by the ghidra feature) and `pi-env`.
-
 ## Presets
 
 | Preset | Adds beyond the common base* |
@@ -88,9 +83,8 @@ Removed with the ghidra migration: `ghidra-mount`, `ghidra-home-env`,
 | `headunit` | ghidra + jadx 1.5.6, arm-embedded/arm-cross-binutils/android-re groups |
 | `nas-cleanup` | ssh-mount |
 
-\* common base in every preset: `base:trixie`, common-utils, node 26, python
-os-provided, **pi feature**, core apt group, host-gateway, pi-config,
-git-credential-libsecret.
+\* common base in every preset: `base:trixie`, common-utils, node 26, python os-provided,
+**pi feature**, core apt group, host-gateway, pi-config, git-credential-libsecret.
 
 ## pi-master MCP inventory (`agent/mcp.json`)
 
@@ -107,29 +101,4 @@ universally-used ones are enabled.
 | `logic-analyzer` (project-bound cwd → blepoolsensor) | blepoolsensor | disabled |
 
 Enable per project without touching master via a `.pi/mcp.json` override,
-e.g. `{"mcpServers": {"docling": {"enabled": true}}}`. Rules for adding new
-servers: [`AGENTS.md`](AGENTS.md).
-
-## Migration & parity status
-
-`--verify` against the existing repos currently shows only intentional diffs:
-
-- **All presets**: pi migration (`+ ./features/pi`, `− pi-agent postCreate`).
-- **blackmagic**: name fix (`car-headunit` → `blackmagic`) + two added arm
-  packages (`binutils-arm-none-eabi`, `gdb-multiarch` — the latter is a
-  dependency of `gcc-arm-none-eabi` anyway).
-- **headunit**: apt dedupe (`dexdump`, `vim`, `xxd` were listed twice).
-- **blepoolsensor**: invalid package `arm-none-eabi-gcc` (a binary name, not
-  a Debian package) replaced by `gcc-arm-none-eabi` + `python3-pyocd`.
-- **blepoolsensor, headunit, nas-cleanup**: ghidra migration (ghidra feature
-  replaces the `ghidra-mount`/`ghidra-home-env`/`ghidra-mcp-bridge` addons;
-  nas-cleanup drops Ghidra entirely).
-
-The ghidra addon migration is complete: the deprecated addons and `pi-env`
-have been removed from the catalog, and every preset now validates against
-it (no dangling references).
-
-Known data issues in the originals, preserved as-is until migrated:
-nas-cleanup's original file had a missing comma (invalid JSON — the lenient
-parser repairs it); blepoolsensor's mcp.json/auth/models-store diverge from
-master (see the pi-master MCP note above).
+e.g. `{"mcpServers": {"docling": {"enabled": true}}}`.
