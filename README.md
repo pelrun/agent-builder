@@ -32,7 +32,10 @@ script). If the submodule is missing, run `git submodule update --init`.
 
 ## Usage
 
-Run **from the directory you want to generate into** (defaults to cwd):
+Run **from the directory you want to generate into** (defaults to cwd).
+When run interactively in an existing devcontainer whose name matches a
+preset, dcgen asks whether to re-apply that preset before falling back to the
+wizard:
 
 ```bash
 python3 dcgen.py                        # interactive wizard
@@ -48,6 +51,7 @@ python3 dcgen.py --sync-pi              # refresh ./.devcontainer/pi from pi-mas
 |---|---|
 | `target` (positional) | target repo dir, default `.` |
 | `--preset NAME` | non-interactive generation from a catalog preset |
+| `--refresh` | re-apply the preset matching this devcontainer (existing `name` field or directory name), no prompt; errors if nothing matches |
 | `--name` / `--image` | override project name / base image |
 | `--catalog PATH` | alternate catalog (default: `catalog.json` next to the script) |
 | `--features-repo PATH` | override features submodule location |

@@ -751,12 +751,30 @@ def preset_spec(catalog, preset_name, target):
 
 # ---------------------------------------------------------------- main
 
+def detect_preset(catalog, target):
+    """Match the existing devcontainer's name field, then the directory name,
+    against preset ids. Returns the preset name or None."""
+    dc_file = target / ".devcontainer" / "devcontainer.json"
+    if dc_file.exists():
+        try:
+            name = parse_jsonc(dc_file.read_text()).get("name")
+        except Exception:
+            name = None
+        if name in catalog["presets"]:
+            return name
+    if target.name in catalog["presets"]:
+        return target.name
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser(description="devcontainer generator with curated catalog",
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
                                  epilog=__doc__.split("Usage:")[1] if "Usage:" in __doc__ else None)
     ap.add_argument("target", nargs="?", default=".", help="target repo dir (default: cwd)")
     ap.add_argument("--preset", help="use a named preset from the catalog")
+    ap.add_argument("--refresh", action="store_true",
+                    help="re-apply the preset matching this devcontainer (no prompt); errors if nothing matches")
     ap.add_argument("--name", help="override project name")
     ap.add_argument("--image", help="override base image")
     ap.add_argument("--catalog", default=str(DEFAULT_CATALOG))
@@ -776,7 +794,8 @@ def main():
     feats_src = resolve_features_repo(catalog, args.features_repo)
     pi_master = resolve_pi_master(catalog)
     interactive = sys.stdin.isatty() and sys.stdout.isatty() and not args.preset \
-        and not args.verify and not args.sync_features and not args.sync_pi and not args.list
+        and not args.verify and not args.sync_features and not args.sync_pi and not args.list \
+        and not args.refresh
     ui = UI(interactive)
 
     if args.list:
@@ -819,6 +838,21 @@ def main():
         if args.preset not in catalog["presets"]:
             sys.exit(f"unknown preset '{args.preset}'. known: {', '.join(catalog['presets'])}")
         spec = preset_spec(catalog, args.preset, target)
+    elif args.refresh:
+        detected = detect_preset(catalog, target)
+        if not detected:
+            sys.exit(f"--refresh: no preset matches this devcontainer "
+                     f"(existing name or directory '{target.name}')")
+        print(f"refresh: re-applying preset '{detected}'")
+        spec = preset_spec(catalog, detected, target)
+    elif interactive:
+        detected = detect_preset(catalog, target)
+        if detected and ui.confirm(
+                f"This devcontainer matches preset '{detected}'. Re-apply it?"):
+            print(f"re-applying preset '{detected}'")
+            spec = preset_spec(catalog, detected, target)
+        else:
+            spec = interactive_spec(catalog, ui, target, feats_src)
     else:
         if not interactive:
             sys.exit("non-interactive without --preset; use --preset or run in a terminal")
