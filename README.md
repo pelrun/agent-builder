@@ -9,6 +9,7 @@ on POSIX terminals and falls back to numbered prompts everywhere else).
 agent-builder/
 ├── dcgen.py         # the tool (self-contained)
 ├── catalog.json     # feature catalog + presets (edited, not generated)
+├── features/        # submodule: source of local features (repo: feature-starter)
 ├── pi-master/       # master copy of .devcontainer/pi (see "pi config" below)
 └── .gitignore       # keeps credential files in pi-master out of git
 ```
@@ -19,14 +20,12 @@ including the pi feature and the cross-repo `polywork-mounts` addon. The
 `.devcontainer/pi/` runtime state bootstraps from `pi-master/` on first
 generation and is never touched afterwards.
 
-Local (repo-owned) features are **sourced from feature-starter** — the canonical
-feature repo — and copied into the target repo at generation time. The catalog
-finds feature-starter by trying candidates in order (paths with `~` are host
-home, bare paths are relative to this file's directory):
-
-1. `--features-repo` CLI flag / `DCGEN_FEATURES_REPO` env var
-2. `../feature-starter` (sibling layout: works in devcontainers and `~/github/*`)
-3. `~/github/feature-starter`, `~/Projects/feature-starter`
+Local (repo-owned) features are **sourced from the feature-starter submodule**
+in this repo — the canonical feature repo — and copied into the target repo at
+generation time. Resolution: `--features-repo` flag or `DCGEN_FEATURES_REPO`
+env override, otherwise the catalog candidates (default `features/`
+next to the script; `~` paths are host home). If the submodule is missing,
+run `git submodule update --init`.
 
 ## Usage
 
@@ -144,7 +143,7 @@ feature) and the pi master copy.
   re-parsed with the tool's lenient JSONC parser as a self-check.
 - Local features are copied from feature-starter into
   `<target>/.devcontainer/features/<id>/` (replacing any existing copy —
-  feature-starter is the source of truth), and referenced as `"./features/<id>"`.
+  the features submodule is the source of truth), and referenced as `"./features/<id>"`.
 - Missing target paths referenced by addons produce warnings before writing.
 
 ## pi config (`.devcontainer/pi`)
@@ -183,12 +182,14 @@ To update repos after changing master config: `python3 dcgen.py --sync-pi <repo>
 
 ## Feature-starter relationship
 
-feature-starter is the source of truth for local features (`pi`, `renode`,
-`jadx`, `ghidra`). The workflow:
+feature-starter is a **git submodule** here and the source of truth for local
+features (`pi`, `renode`, `jadx`, `ghidra`). The workflow:
 
-1. Edit/fix a feature in `feature-starter/src/<id>/`, bump its
-   `devcontainer-feature.json` version, commit.
-2. Propagate: `python3 dcgen.py --sync-features <repo>` refreshes every
+1. Author/fix a feature in your feature-starter checkout, bump its
+   `devcontainer-feature.json` version, commit **and push**.
+2. Bump the pin here: `git submodule update --remote features`, then
+   commit the superproject.
+3. Propagate: `python3 dcgen.py --sync-features <repo>` refreshes every
    `./`-referenced feature in that repo in place (keeps each repo's existing
    path style), or regenerate the repo with its preset.
 3. The ghidra feature installs Ghidra plus an MCP server, selected by the

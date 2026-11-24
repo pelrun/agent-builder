@@ -640,9 +640,9 @@ def interactive_spec(catalog, ui, target, feats_src):
         {"id": f["id"], "label": f["id"], "desc": f.get("comment", ""), "checked": f.get("default", False)}
         for f in catalog["features"] if f["kind"] == "local" and not f.get("locked")
     ]
-    selected_tools = ui.multi_select("Tool features (copied from feature-starter)", tool_items)
+    selected_tools = ui.multi_select("Tool features (copied from the features submodule)", tool_items)
     if selected_tools and not feats_src:
-        print("WARNING: feature-starter not found; local features cannot be copied.", file=sys.stderr)
+        print("WARNING: features submodule not found; run: git submodule update --init", file=sys.stderr)
     locked_ids = [f["id"] for f in catalog["features"] if f.get("locked")]
     selected = locked_ids + selected_rt + selected_tools
 
@@ -794,7 +794,7 @@ def main():
 
     if args.sync_features:
         if not feats_src:
-            sys.exit("feature-starter not found (use --features-repo)")
+            sys.exit("features submodule not found; run: git submodule update --init (or use --features-repo)")
         sync_features(target, feats_src)
         return 0
 
@@ -854,7 +854,7 @@ def main():
             return 0
 
     if local_ids and not feats_src:
-        sys.exit("local features selected but feature-starter not found (use --features-repo)")
+        sys.exit("local features selected but features submodule not found; run: git submodule update --init (or use --features-repo)")
     write_output(target, config, key_comments, local_ids, feats_src, args.dry_run,
                  pi_master=pi_master, materialize_pi=bool(spec.get("_materialize_pi")))
     if not args.dry_run:
