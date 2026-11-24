@@ -278,7 +278,7 @@
 			"id": "usb-hotplug",
 			"default": false,
 			"comment": "USB passthrough, incl. devices plugged in later",
-			"help": "Mounts /dev/bus/usb and grants a usb device-cgroup rule, so devices connected after container start appear automatically. Conflicts with usb-basic.",
+			"help": "Mounts /dev/bus/usb and grants a usb device-cgroup rule, so devices connected after container start appear automatically - including devices the host attaches via usbip (vhci devices land on the host bus like physical ones; attachment is managed on the host, no container-side usbip tooling needed). Conflicts with usb-basic.",
 			"runArgs": [
 				"--device-cgroup-rule=c 189:* rmw"
 			],

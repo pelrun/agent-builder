@@ -5,6 +5,15 @@ CATALOG.md, AGENTS.md) describe current state only.
 
 ## 2026-11-25
 
+- usbip investigation resolved: device attachment is managed on the host
+  (devices are not permanently connected), so no container-side usbip
+  component is needed — usbip-attached (vhci) devices land on the host bus
+  like physical ones and surface through `usb-hotplug`'s existing
+  /dev/bus/usb mount + cgroup rule. Verified empirically: the container
+  shares the host kernel's sysfs (host USB devices visible) but not its
+  devtmpfs, so device nodes never propagate into a container's private
+  /dev without the bind-mount.
+
 - Catalog cleanup: removed the deprecated ghidra addons (`ghidra-mount`,
   `ghidra-home-env`, `ghidra-mcp-bridge`) and `pi-env` (its env vars moved
   into `pi-config`). Presets migrated to the ghidra feature (blepoolsensor

@@ -60,7 +60,7 @@ Default ✓ = pre-checked in the wizard.
 | Addon | Default | Notes |
 |---|---|---|
 | `host-gateway` | ✓ | `host.docker.internal` resolves to the host |
-| `usb-hotplug` | | USB passthrough, incl. devices plugged in later (conflicts with `usb-basic`) |
+| `usb-hotplug` | | USB passthrough, incl. devices plugged in later or attached via usbip on the host (conflicts with `usb-basic`) |
 | `usb-basic` | | USB passthrough, devices present at start only (conflicts with `usb-hotplug`) |
 | `host-ipc` | | share the host IPC namespace |
 | `gui-bridge` | | X11/Wayland GUI apps from the host display |
