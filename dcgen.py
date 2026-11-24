@@ -354,16 +354,11 @@ def build_config(catalog, spec):
     pkg_list = dedupe(pkg_list)
     if pkg_list:
         features_obj[APT_REF] = {"packages": ",".join(pkg_list)}
+        comment = "apt packages"
         if group_ids:
-            comment = "apt packages merged from groups: " + " + ".join(group_ids)
-        else:
-            comment = "apt packages"
-        if required_by:
-            bits = ", ".join(f"{p} <- {', '.join(ids)}" for p, ids in sorted(required_by.items()))
-            comment += "; required by features: " + bits
+            comment += " merged from groups: " + " + ".join(group_ids)
         if addon_apt:
-            bits = ", ".join(f"{p} <- {', '.join(ids)}" for p, ids in sorted(addon_apt.items()))
-            comment += "; required by addons: " + bits
+            comment += "; addons: " + ", ".join(sorted({a for ids in addon_apt.values() for a in ids}))
         if spec.get("extra_packages"):
             comment += f" (+{len(spec['extra_packages'])} extra)"
         key_comments[("features", APT_REF)] = comment

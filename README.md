@@ -111,8 +111,12 @@ Logical package sets merged into **one** `apt-packages:1` entry, deduplicated,
 group order preserved. The generated entry carries a provenance comment:
 
 ```
-// apt packages merged from groups: <groups>; required by features: <pkg> <- <feature, feature>
+// apt packages merged from groups: <groups>; addons: <addons>
 ```
+
+Feature-required packages (`requires_packages`) and addon `apt_packages`
+are merged in silently — their provenance lives in the feature/addon
+definitions, not in the generated file.
 
 ### `addons`
 Named JSON fragments merged by kind: `runArgs`, `mounts`, `containerEnv`,
