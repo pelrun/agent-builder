@@ -406,7 +406,7 @@
 		{
 			"id": "git-credential-libsecret",
 			"default": false,
-			"comment": "Host libsecret credential helper via D-Bus Secret Service: installs the lib, builds git-credential-libsecret post-create (from git's contrib, into ~/.local/bin) and registers it as a global credential helper; mounts the host session bus",
+			"comment": "Host libsecret credential helper via D-Bus Secret Service: installs the lib, builds git-credential-libsecret post-create (from git's contrib, into ~/.local/bin) and registers it as a global credential helper (scoped per-repository via credential.useHttpPath); mounts the host session bus",
 			"apt_packages": [
 				"libsecret-1-0",
 				"libsecret-1-dev",
@@ -419,7 +419,7 @@
 				"DBUS_SESSION_BUS_ADDRESS": "unix:path=/tmp/host-dbus/bus"
 			},
 			"postCreateCommand": {
-				"git-credential-libsecret": "set -e; mkdir -p \"$HOME/.local/bin\"; if [ ! -x \"$HOME/.local/bin/git-credential-libsecret\" ]; then rm -rf \"$HOME/.cache/git-contrib\"; git clone --depth 1 https://github.com/git/git.git \"$HOME/.cache/git-contrib\"; make -C \"$HOME/.cache/git-contrib/contrib/credential/libsecret\"; install -m 0755 \"$HOME/.cache/git-contrib/contrib/credential/libsecret/git-credential-libsecret\" \"$HOME/.local/bin/\"; fi; git config --global --get credential.helper | grep -qx libsecret || git config --global --add credential.helper libsecret"
+				"git-credential-libsecret": "set -e; mkdir -p \"$HOME/.local/bin\"; if [ ! -x \"$HOME/.local/bin/git-credential-libsecret\" ]; then rm -rf \"$HOME/.cache/git-contrib\"; git clone --depth 1 https://github.com/git/git.git \"$HOME/.cache/git-contrib\"; make -C \"$HOME/.cache/git-contrib/contrib/credential/libsecret\"; install -m 0755 \"$HOME/.cache/git-contrib/contrib/credential/libsecret/git-credential-libsecret\" \"$HOME/.local/bin/\"; fi; git config --global --get credential.helper | grep -qx libsecret || git config --global --add credential.helper libsecret; git config --global credential.useHttpPath true"
 			}
 		}
 	],

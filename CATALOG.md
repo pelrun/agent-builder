@@ -72,7 +72,9 @@ host libsecret credential helper via D-Bus Secret Service: installs
 `DBUS_SESSION_BUS_ADDRESS` set, and builds `git-credential-libsecret`
 post-create from git's `contrib/credential/libsecret` (Debian does not ship
 the binary) into `~/.local/bin`, registering it as a global credential
-helper. Pairs with the host `.gitconfig` that devcontainers copy in.
+helper (with `credential.useHttpPath true`, so stored credentials are
+scoped to the individual repository path). Pairs with the host
+`.gitconfig` that devcontainers copy in.
 
 Deprecated — pending migration of the repos that still use them; do not
 select for new containers:

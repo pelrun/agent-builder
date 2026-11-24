@@ -3,6 +3,9 @@ pi-master/agent/auth.json
 pi-master/agent/models-store.json
 pi-master/pi-reach/
 
+# personal access token (never commit)
+/token
+
 # python
 __pycache__/
 
