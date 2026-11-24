@@ -2,8 +2,7 @@
 
 Companion to [`README.md`](README.md): documents the *current* content of
 `catalog.json`, the pi-master seed, and the migration status of the managed
-repos. Update this file alongside any catalog change that alters policies,
-inventories, or migration state.
+repos. Editing rules and invariants live in [`AGENTS.md`](AGENTS.md).
 
 ## Features
 
@@ -55,8 +54,7 @@ Policies:
 | `cpc-build` | bison, flex, clang, libboost-dev, zlib1g-dev, libfreeimage-dev | SDCC/CPCtelera build deps |
 | `jdk` | openjdk-25-jdk | standalone JDK |
 
-Selected groups merge into one deduplicated `apt-packages` entry (core first,
-order preserved, provenance comment emitted).
+Selected groups merge into one deduplicated `apt-packages` entry.
 
 ## Addons
 
@@ -116,10 +114,8 @@ universally-used ones are enabled.
 | `logic-analyzer` (project-bound cwd → blepoolsensor) | blepoolsensor | disabled |
 
 Enable per project without touching master via a `.pi/mcp.json` override,
-e.g. `{"mcpServers": {"docling": {"enabled": true}}}`. New servers must be
-added to master **disabled**, with provenance in the description. pi's key is
-`enabled` — a `disabled` key is silently ignored and the server still
-connects.
+e.g. `{"mcpServers": {"docling": {"enabled": true}}}`. Rules for adding new
+servers: [`AGENTS.md`](AGENTS.md).
 
 ## Migration & parity status
 

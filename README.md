@@ -5,28 +5,29 @@ features from a curated catalog. Single file, **Python stdlib only** — no pip
 dependencies, runs on any host with Python 3.8+ (the checkbox UI uses `curses`
 on POSIX terminals and falls back to numbered prompts everywhere else).
 
-> **See [`CATALOG.md`](CATALOG.md) for the current catalog contents**: feature
-> inventory and policies, apt groups, addons (incl. deprecated), presets, the
-> collated MCP server inventory, and per-repo migration status.
+Companion docs:
+
+- [`CATALOG.md`](CATALOG.md) — what's in the catalog right now: features, apt
+  groups, addons (incl. deprecated), presets, the collated MCP server
+  inventory, and per-repo migration status.
+- [`AGENTS.md`](AGENTS.md) — the fine print for coding agents: catalog schema,
+  generation/sync semantics, pi-state rules, verify normalization.
 
 ```
 agent-builder/
 ├── dcgen.py         # the tool (self-contained)
 ├── catalog.json     # feature catalog + presets (edited, not generated)
-├── CATALOG.md       # documentation of the current catalog contents
+├── CATALOG.md       # catalog inventory & migration status
+├── AGENTS.md        # agent-facing rules and invariants
+├── TODO.md          # deferred design work
 ├── features/        # local features (one dir per feature, installed into targets)
-└── pi-master/       # master copy of .devcontainer/pi (see "pi config" below)
+└── pi-master/       # master copy of .devcontainer/pi (rules in AGENTS.md)
 ```
 
-This repo **self-hosts**: its own `.devcontainer/` is generated output,
-`python3 dcgen.py --preset agent-builder` reproduces it. The
-`.devcontainer/pi/` runtime state bootstraps from `pi-master/` on first
-generation and is never touched afterwards.
-
-Local (repo-owned) features live in `features/` (one dir per feature) and are
-copied into the target repo at generation time. Resolution:
-`--features-repo` flag or `DCGEN_FEATURES_REPO` env override, otherwise the
-catalog candidates (default `features/` next to the script).
+This repo **self-hosts**: its own `.devcontainer/` is generated output;
+`python3 dcgen.py --refresh .` reproduces it. Local features live in
+`features/` (one dir per feature) and are copied into target repos at
+generation time.
 
 ## Usage
 
@@ -73,135 +74,28 @@ without writing.
    `apt-packages` entry (locked groups are always on). Afterwards: free-text
    extra packages.
 5. **Environment addons** — runArgs / mounts / containerEnv /
-   postCreateCommand fragments. Conflicting selections warn (per `conflicts`);
-   unselected recommendations (`recommends`) are noted.
+   postCreateCommand fragments. Conflicting selections warn;
+   unselected recommendations are noted.
 6. Option prompts for selected features that define them (locked features are
    never prompted).
 7. Review summary → confirm → generate.
 
-In the selection menus every item shows a one-line description; items marked
-`(h)` carry a longer help text, shown on `h` (curses UI) or `h <number>`
-(plain fallback). For apt groups the help text is the full package list.
-
-## Catalog model
-
-Everything the tool knows lives in `catalog.json`. The catalog is data —
-adding a feature, group, addon, or preset needs no code changes. For the
-current inventory and per-feature policies, see [`CATALOG.md`](CATALOG.md).
-
-### `features`
-| Field | Meaning |
-|---|---|
-| `kind` | `feature` (published ghcr.io feature, `ref` + `options`) or `local` (lives in `features/`, referenced as `./features/<id>`) |
-| `options` | default feature options; preset/user selections override |
-| `prompts` | interactive option questions: `option`, `prompt`, `default`, `proposals` |
-| `default` / `locked` | pre-checked in the wizard / always-on, hidden from pickers and prompts |
-| `comment` / `help` | one-line wizard description; optional longer `help` shown on `h` in the pickers (the generated config's `//` comments use `comment`) |
-| `requires` | **feature dependencies** — auto-added with defaults if missing |
-| `requires_addons` | **addon dependencies** — auto-selected if missing |
-| `requires_packages` | **package dependencies** — merged into the apt-packages entry even if no apt group is selected |
-
-Features are emitted in catalog order, with the merged apt-packages entry
-last. Dependency resolution (`requires` / `requires_addons` /
-`requires_packages`) is transitive and fails loudly on unknown ids.
-
-### `apt_groups`
-Logical package sets merged into **one** `apt-packages:1` entry, deduplicated,
-group order preserved. The generated entry carries a provenance comment:
-
-```
-// apt packages merged from groups: <groups>; addons: <addons>
-```
-
-Feature-required packages (`requires_packages`) and addon `apt_packages`
-are merged in silently — their provenance lives in the feature/addon
-definitions, not in the generated file.
-
-### `addons`
-Named JSON fragments merged by kind: `runArgs`, `mounts`, `containerEnv`,
-`postCreateCommand`, `remoteUser`/`updateRemoteUserUID`. Extras:
-`apt_packages` (addon-level package dependencies, merged into the
-apt-packages entry with provenance), `commented_mounts` /
-`commented_postcreate` (emitted as `//` lines in presets), `conflicts`,
-`recommends`, `requires_path` (warns when a path is missing in the target),
-`materializes` (addon ensures a directory is bootstrapped from a master
-copy, e.g. pi-config). Addons also carry `comment` / `help` (wizard line /
-`h` help), same as features.
-
-### `presets`
-Named, non-interactive selections reproducing the existing repo configs:
-`name`, `image`, `features` (with options), `apt_groups`, `addons`,
-`commented_features` / `commented_mounts` / `commented_postcreate`.
-
-### `features_repo` / `pi_master`
-Location candidates for the features dir (one folder per feature; the repo's
-`features/` dir is the default candidate) and the pi master copy.
-
-## Generation behavior
-
-- Output is JSONC in house style: tab-indented, one `// comment` above each
-  feature (from its catalog `comment`) and above the apt entry (provenance).
-- Deliberately-disabled entries can be carried in presets and are emitted as
-  comments, e.g. `// {"ghcr.io/<org>/<feature>:1": {...}}`.
-- Sets (`runArgs`, `mounts`) are deduplicated preserving order; the output is
-  re-parsed with the tool's lenient JSONC parser as a self-check.
-- Local features are copied from the features dir into
-  `<target>/.devcontainer/features/<id>/` (replacing any existing copy —
-  the features dir is the source of truth), and referenced as `"./features/<id>"`.
-- Missing target paths referenced by addons produce warnings before writing.
+Selection menus show a one-line description per item; items marked `(h)`
+carry a longer help text — press `h` (or `h <number>` in the plain fallback).
 
 ## pi config (`.devcontainer/pi`)
 
-`.devcontainer/pi` is bind-mounted as `~/.pi`, so after first boot it **is**
-runtime state. The tool treats it accordingly:
-
-- **Bootstrap only**: generation materializes it from `pi-master/` only when
-  the directory is missing or empty. An existing config is never touched by
-  regeneration — the tool prints `pi config present ...; untouched`.
-- **`--sync-pi` is the explicit updater**: copy-if-older per file (mtime + 1s
-  skew tolerance), never deletes target-only files (sessions, caches survive),
-  preserves file/dir modes, and mirrors directory modes from master. Because
-  `copy2` preserves mtimes, unchanged files stay "kept" on every later sync —
-  no churn.
-- `pi-master/` holds the shared seed: credentials (gitignored), settings, the
-  collated `agent/mcp.json`, model catalogs, skills, tool scripts, and the
-  npm extension manifest. Runtime-only artifacts (sessions, missions, caches,
-  `*.bak`, `node_modules`) are deliberately absent from master.
-- The collated `mcp.json` carries every MCP server used across the managed
-  repos; entries not universal to every container ship **disabled** — enable
-  per project via a `.pi/mcp.json` override. Flag caveat: pi's key is
-  `enabled` (boolean, default true); pi silently ignores unknown keys, so a
-  `disabled` key from other clients' conventions does **not** disable
-  anything.
-- To update repos after changing master config: `python3 dcgen.py --sync-pi
-  <repo>`. New repos bootstrap automatically.
-
-## Feature edits workflow
-
-The `features/` dir in this repo is the source of truth for local features.
-Edit a feature here (bumping its `devcontainer-feature.json` version when
-behavior changes), commit with this repo, then propagate:
-`python3 dcgen.py --sync-features <repo>` refreshes every
-`./`-referenced feature in that repo in place (keeps each repo's existing
-path style), or regenerate the repo with its preset.
+`.devcontainer/pi` is bind-mounted as `~/.pi`, so after first boot it is
+runtime state: generation bootstraps it from `pi-master/` only when it is
+missing or empty, and never touches an existing config. `--sync-pi` is the
+explicit, state-safe updater. Full state rules: [`AGENTS.md`](AGENTS.md).
 
 ## Verifying / migrating existing repos
-
-Presets can be parity-checked against an existing configuration:
 
 ```bash
 python3 dcgen.py --preset <name> --verify .devcontainer/devcontainer.json
 ```
 
-`--verify` normalizes both sides (apt packages as sets, local feature refs by
-basename) and reports only real differences. The lenient parser also accepts
-hand-edited files (comments, missing commas, trailing commas). To migrate a
-repo, run the same command without `--verify`, review, and commit. See
-[`CATALOG.md`](CATALOG.md) for the current expected-diff and migration state.
-
-## Editing the catalog
-
-`catalog.json` is data — no code changes needed to add a group, addon, or
-preset. Validate with `python3 dcgen.py --list` and a `--dry-run`. Keep
-`locked` entries intact: the tool guarantees them. Update `CATALOG.md`
-alongside any catalog change that alters policies or inventories.
+parity-checks a preset against an existing config without writing (exit 2 on
+differences). Expected diffs and migration status per repo:
+[`CATALOG.md`](CATALOG.md).
