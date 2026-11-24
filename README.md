@@ -14,7 +14,7 @@ agent-builder/
 ├── dcgen.py         # the tool (self-contained)
 ├── catalog.json     # feature catalog + presets (edited, not generated)
 ├── CATALOG.md       # documentation of the current catalog contents
-├── features/        # submodule: source of local features (repo: feature-starter)
+├── features/        # local features (one dir per feature, installed into targets)
 └── pi-master/       # master copy of .devcontainer/pi (see "pi config" below)
 ```
 
@@ -23,11 +23,10 @@ This repo **self-hosts**: its own `.devcontainer/` is generated output,
 `.devcontainer/pi/` runtime state bootstraps from `pi-master/` on first
 generation and is never touched afterwards.
 
-Local (repo-owned) features are **sourced from the features submodule**
-and copied into the target repo at generation time. Resolution:
+Local (repo-owned) features live in `features/` (one dir per feature) and are
+copied into the target repo at generation time. Resolution:
 `--features-repo` flag or `DCGEN_FEATURES_REPO` env override, otherwise the
 catalog candidates (default `features/` next to the script).
-If the submodule is missing, run `git submodule update --init`.
 
 ## Usage
 
@@ -40,7 +39,7 @@ python3 dcgen.py --preset <name>        # reproduce a known config, no prompts
 python3 dcgen.py --preset <name> --dry-run
 python3 dcgen.py --preset <name> --verify .devcontainer/devcontainer.json
 python3 dcgen.py --refresh              # refreshes current config from detected preset, no prompts
-python3 dcgen.py --sync-features        # refresh ./-referenced features from the submodule
+python3 dcgen.py --sync-features        # refresh ./-referenced features from features/
 python3 dcgen.py --sync-pi              # refresh ./.devcontainer/pi from pi-master
 ```
 
@@ -51,7 +50,7 @@ python3 dcgen.py --sync-pi              # refresh ./.devcontainer/pi from pi-mas
 | `--refresh` | re-apply the preset matching this devcontainer, no prompt; error if no match |
 | `--name` / `--image` | override project name / base image |
 | `--catalog PATH` | alternate catalog (default: `catalog.json` next to the script) |
-| `--features-repo PATH` | override features submodule location |
+| `--features-repo PATH` | override features dir location |
 | `--list` | print features, apt groups, addons, presets |
 | `--dry-run` | print everything (config + planned copies) without writing |
 | `--verify JSONFILE` | compare generated result against an existing devcontainer.json; no write; **exit 2** if different |
@@ -69,7 +68,7 @@ without writing.
 1. Project name (default: directory name) and base image (default: catalog's).
 2. **Language runtimes** — checkbox list. Locked features are *not* shown;
    they are always included.
-3. **Tool features** — local features from the features submodule.
+3. **Tool features** — local features from `features/`.
 4. **apt package groups** — logical groups that merge into one deduplicated
    `apt-packages` entry (locked groups are always on). Afterwards: free-text
    extra packages.
@@ -93,7 +92,7 @@ current inventory and per-feature policies, see [`CATALOG.md`](CATALOG.md).
 ### `features`
 | Field | Meaning |
 |---|---|
-| `kind` | `feature` (published ghcr.io feature, `ref` + `options`) or `local` (lives in the features submodule, referenced as `./features/<id>`) |
+| `kind` | `feature` (published ghcr.io feature, `ref` + `options`) or `local` (lives in `features/`, referenced as `./features/<id>`) |
 | `options` | default feature options; preset/user selections override |
 | `prompts` | interactive option questions: `option`, `prompt`, `default`, `proposals` |
 | `default` / `locked` | pre-checked in the wizard / always-on, hidden from pickers and prompts |
@@ -135,8 +134,8 @@ Named, non-interactive selections reproducing the existing repo configs:
 `commented_features` / `commented_mounts` / `commented_postcreate`.
 
 ### `features_repo` / `pi_master`
-Location candidates for the features submodule (`src/` holds one folder per
-feature) and the pi master copy.
+Location candidates for the features dir (one folder per feature; the repo's
+`features/` dir is the default candidate) and the pi master copy.
 
 ## Generation behavior
 
@@ -146,9 +145,9 @@ feature) and the pi master copy.
   comments, e.g. `// {"ghcr.io/<org>/<feature>:1": {...}}`.
 - Sets (`runArgs`, `mounts`) are deduplicated preserving order; the output is
   re-parsed with the tool's lenient JSONC parser as a self-check.
-- Local features are copied from the features submodule into
+- Local features are copied from the features dir into
   `<target>/.devcontainer/features/<id>/` (replacing any existing copy —
-  the submodule is the source of truth), and referenced as `"./features/<id>"`.
+  the features dir is the source of truth), and referenced as `"./features/<id>"`.
 - Missing target paths referenced by addons produce warnings before writing.
 
 ## pi config (`.devcontainer/pi`)
@@ -177,18 +176,14 @@ runtime state. The tool treats it accordingly:
 - To update repos after changing master config: `python3 dcgen.py --sync-pi
   <repo>`. New repos bootstrap automatically.
 
-## Feature submodule workflow
+## Feature edits workflow
 
-The features submodule is the source of truth for local features. The
-workflow:
-
-1. Author/fix a feature in your feature checkout, bump its
-   `devcontainer-feature.json` version, commit **and push**.
-2. Bump the pin here: `git submodule update --remote features`, then
-   commit the superproject.
-3. Propagate: `python3 dcgen.py --sync-features <repo>` refreshes every
-   `./`-referenced feature in that repo in place (keeps each repo's existing
-   path style), or regenerate the repo with its preset.
+The `features/` dir in this repo is the source of truth for local features.
+Edit a feature here (bumping its `devcontainer-feature.json` version when
+behavior changes), commit with this repo, then propagate:
+`python3 dcgen.py --sync-features <repo>` refreshes every
+`./`-referenced feature in that repo in place (keeps each repo's existing
+path style), or regenerate the repo with its preset.
 
 ## Verifying / migrating existing repos
 

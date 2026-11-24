@@ -1,0 +1,39 @@
+{
+	"name": "ghidra",
+	"id": "ghidra",
+	"version": "1.4.0",
+	"description": "Installs Ghidra plus the GhidraMCP stack: extension (headless auto-enabled), MCP bridge via uv tool (/usr/local/bin/bridge-mcp-ghidra), and PyGhidra enrollment. URL resolved via the GitHub releases API.",
+	"documentationURL": "https://github.com/pelrun/devcontainer-features/tree/main/src/ghidra",
+	"options": {
+		"version": {
+			"type": "string",
+			"proposals": [
+				"latest",
+				"12.2",
+				"12.1.4",
+				"none"
+			],
+			"default": "latest",
+			"description": "Select Ghidra version (release tags look like Ghidra_12.2_build); 'none' skips installation."
+		},
+		"mcpServer": {
+			"type": "string",
+			"enum": [
+				"ghidramcp",
+				"ghidrassist"
+			],
+			"proposals": [
+				"ghidramcp",
+				"ghidrassist"
+			],
+			"default": "ghidrassist",
+			"description": "MCP server stack: ghidramcp = bethington fork (extension + uv-installed bridge, HTTP :8089); ghidrassist = GhidrAssistMCP native extension (HTTP :8080, no bridge)."
+		}
+	},
+	"installsAfter": [
+		"ghcr.io/devcontainers/features/common-utils"
+	],
+	"containerEnv": {
+		"GHIDRA_INSTALL_DIR": "/opt/ghidra"
+	}
+}

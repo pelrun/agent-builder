@@ -2,8 +2,8 @@
 	"version": 1,
 	"base_image": "mcr.microsoft.com/devcontainers/base:trixie",
 	"features_repo": {
-		"comment": "Where local (repo-owned) features are sourced from: this repo's features submodule. Candidates are relative to this catalog's directory; ~ paths are host home. If the submodule is missing run: git submodule update --init.",
-		"src_dir": "src",
+		"comment": "Where local (repo-owned) features are sourced from: this repo's features/ dir. Candidates are relative to this catalog's directory; ~ paths are host home.",
+		"src_dir": ".",
 		"candidates": [
 			"features"
 		]

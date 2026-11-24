@@ -6,7 +6,7 @@ Self-contained: Python stdlib only (curses UI on POSIX terminals, plain prompts 
 Layout:
   dcgen.py      - this tool
   catalog.json  - feature/apt-group/addon catalog + presets (next to this file)
-  feature-starter (resolved via catalog candidates) - source of local (repo-owned) features.
+  features/ (resolved via catalog candidates) - source of local (repo-owned) features.
                   Local features are copied into <target>/.devcontainer/features/<id>/
                   at generation time; the devcontainer.json references them as ./features/<id>.
 
@@ -688,9 +688,9 @@ def interactive_spec(catalog, ui, target, feats_src):
         {"id": f["id"], "label": f["id"], "desc": f.get("comment", ""), "help": f.get("help", ""), "checked": f.get("default", False)}
         for f in catalog["features"] if f["kind"] == "local" and not f.get("locked")
     ]
-    selected_tools = ui.multi_select("Tool features (copied from the features submodule)", tool_items)
+    selected_tools = ui.multi_select("Tool features (copied from the features dir)", tool_items)
     if selected_tools and not feats_src:
-        print("WARNING: features submodule not found; run: git submodule update --init", file=sys.stderr)
+        print("WARNING: local features not found (features dir missing)", file=sys.stderr)
     locked_ids = [f["id"] for f in catalog["features"] if f.get("locked")]
     selected = locked_ids + selected_rt + selected_tools
 
@@ -764,7 +764,7 @@ def sync_features(target: Path, features_src: Path):
         src = features_src / fid
         dst = dc_file.parent / ref.lstrip("./")
         if not src.is_dir():
-            print(f"SKIP {fid}: not in feature-starter ({src})", file=sys.stderr)
+            print(f"SKIP {fid}: not in features dir ({src})", file=sys.stderr)
             continue
         if dst.exists():
             shutil.rmtree(dst)
@@ -824,13 +824,13 @@ def main():
     ap.add_argument("--name", help="override project name")
     ap.add_argument("--image", help="override base image")
     ap.add_argument("--catalog", default=str(DEFAULT_CATALOG))
-    ap.add_argument("--features-repo", help="path to feature-starter (overrides catalog candidates)")
+    ap.add_argument("--features-repo", help="path to a features dir (overrides catalog candidates)")
     ap.add_argument("--list", action="store_true", help="list catalog contents and exit")
     ap.add_argument("--dry-run", action="store_true", help="print instead of writing")
     ap.add_argument("--verify", metavar="EXISTING",
                     help="compare result against an existing devcontainer.json (no write); exit 2 if different")
     ap.add_argument("--sync-features", action="store_true",
-                    help="refresh ./-referenced local features in target from feature-starter")
+                    help="refresh ./-referenced local features in target from the catalog features dir")
     ap.add_argument("--sync-pi", action="store_true",
                     help="sync pi-master into <target>/.devcontainer/pi (copy-if-older, state-safe)")
     args = ap.parse_args()
@@ -869,7 +869,7 @@ def main():
 
     if args.sync_features:
         if not feats_src:
-            sys.exit("features submodule not found; run: git submodule update --init (or use --features-repo)")
+            sys.exit("local features not found (features dir missing; or use --features-repo)")
         sync_features(target, feats_src)
         return 0
 
@@ -946,7 +946,7 @@ def main():
             return 0
 
     if local_ids and not feats_src:
-        sys.exit("local features selected but features submodule not found; run: git submodule update --init (or use --features-repo)")
+        sys.exit("local features selected but features dir not found (or use --features-repo)")
     write_output(target, config, key_comments, local_ids, feats_src, args.dry_run,
                  pi_master=pi_master, materialize_pi=bool(spec.get("_materialize_pi")))
     if not args.dry_run:

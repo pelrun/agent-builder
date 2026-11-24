@@ -1,3 +1,0 @@
-[submodule "features"]
-	path = features
-	url = https://github.com/pelrun/devcontainer-features.git
