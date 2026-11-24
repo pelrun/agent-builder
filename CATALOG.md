@@ -1,8 +1,7 @@
 # Catalog contents & state
 
 Companion to [`README.md`](README.md): documents the *current* content of
-`catalog.json`, the pi-master seed, and the migration status of the managed
-repos. Editing rules and invariants live in [`AGENTS.md`](AGENTS.md).
+`catalog.json`, and the pi-master seed. Editing rules and invariants live in [`AGENTS.md`](AGENTS.md).
 
 ## Features
 
@@ -96,7 +95,7 @@ universally-used ones are enabled.
 | `zai-search`, `zai-reader`, `zai-zread`, `zai-vision` | all | **enabled** |
 | `docling` (PDF→markdown, uvx) | agent-builder, blackmagic, headunit | disabled |
 | `ghidra` (bethington bridge, :8089, `MCPSERVER=ghidramcp`) | blepoolsensor | disabled |
-| `ghidrassist` (native, :8080/mcp, `MCPSERVER=ghidrassist`) | — (new default) | disabled |
+| `ghidrassist` (native, :8080/mcp, `MCPSERVER=ghidrassist`) | — (default) | disabled |
 | `gdb` (gdb-mcp v0.4.0) | blepoolsensor | disabled |
 | `logic-analyzer` (project-bound cwd → blepoolsensor) | blepoolsensor | disabled |
 

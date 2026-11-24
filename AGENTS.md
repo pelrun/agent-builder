@@ -2,8 +2,8 @@
 
 The fine print for coding agents working in this repo. Human-facing docs:
 [`README.md`](README.md) (usage) and [`CATALOG.md`](CATALOG.md) (current
-catalog inventory and migration status). Deferred design work lives in
-[`TODO.md`](TODO.md).
+catalog inventory). Deferred design work lives in [`TODO.md`](TODO.md);
+historical record lives in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## What this repo is
 
@@ -28,7 +28,9 @@ presets needs no code changes. Rules:
   The `//` comments in generated configs use `comment` only.
 - Update `CATALOG.md` alongside any change that alters inventories or
   policies; record deferred design work in `TODO.md` rather than code
-  comments.
+  comments, and notable change history in `CHANGELOG.md`. The primary docs
+  (README/CATALOG/AGENTS) describe current state only — no historical
+  narrative, migration stories, or "was X, now Y" notes.
 
 ## Catalog schema
 
@@ -140,12 +142,11 @@ runtime state:
   `disabled` key from other clients' conventions does **not** disable
   anything.
 
-## Verify / migration
+## Verify
 
 - `--preset <name> --verify <repo>/.devcontainer/devcontainer.json`
   compares without writing; **exit 2** on differences.
 - Normalization before compare: apt `packages` compared as sets, local
   feature refs keyed by basename, commented entries ignored, `runArgs`/
   `mounts` as sorted sets — cosmetic edits don't false-positive.
-- The lenient parser accepts comments, missing/trailing commas (needed for
-  hand-edited originals; e.g. nas-cleanup's invalid JSON).
+- The lenient parser accepts comments and missing/trailing commas.

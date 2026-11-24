@@ -8,8 +8,7 @@ on POSIX terminals and falls back to numbered prompts everywhere else).
 Companion docs:
 
 - [`CATALOG.md`](CATALOG.md) — what's in the catalog right now: features, apt
-  groups, addons (incl. deprecated), presets, the collated MCP server
-  inventory, and per-repo migration status.
+  groups, addons, presets, and the collated MCP server inventory.
 - [`AGENTS.md`](AGENTS.md) — the fine print for coding agents: catalog schema,
   generation/sync semantics, pi-state rules, verify normalization.
 
@@ -17,7 +16,7 @@ Companion docs:
 agent-builder/
 ├── dcgen.py         # the tool (self-contained)
 ├── catalog.json     # feature catalog + presets (edited, not generated)
-├── CATALOG.md       # catalog inventory & migration status
+├── CATALOG.md       # catalog inventory
 ├── AGENTS.md        # agent-facing rules and invariants
 ├── TODO.md          # deferred design work
 ├── features/        # local features (one dir per feature, installed into targets)
@@ -96,7 +95,7 @@ explicit, state-safe updater.
 
 ## Verifying / migrating existing repos
 
-Use the following to compare a previously generated configuration to a preset:
+Use the following to compare an existing configuration against a preset:
 
 ```bash
 python3 dcgen.py --preset <name> --verify .devcontainer/devcontainer.json
