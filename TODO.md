@@ -1,5 +1,31 @@
 # TODO
 
+## usbip feature (network-attached USB devices)
+
+Investigation done (2026-11-26); awaiting decision on host-side prerequisites.
+Key finding: usbip complements rather than replaces the usb addons — vhci
+devices surface through the same /dev/bus/usb usbfs mechanics, so the
+bind-mount + cgroup rule (usb-hotplug) is still what makes the container see
+them. Design:
+
+- **`usbip` feature** (local, `features/usbip`): installs the `usbip` package
+  (already in trixie; client + server in one pkg), ships PATH helpers
+  `usbip-list` / `usbip-attach <busid>` / `usbip-detach` defaulting to
+  `USBIP_HOST` or `host.docker.internal`; attach helper pre-checks vhci_hcd
+  (clear error pointing at host `modprobe vhci_hcd`), cleans stale ports,
+  runs the sysfs write via sudo (common-utils provides it).
+- Feature declares `requires_addons: [usb-hotplug]` so visibility is
+  auto-selected. `usb-basic` can be retired later (hotplug is a superset).
+- **Host prerequisites**: `usbipd` listening on the docker bridge
+  (currently connection-refused on 172.17.0.1:3240 — firewall allowance for
+  172.17.0.0/16 :3240) and `modprobe vhci_hcd` once (host modules-load.d;
+  container has no /lib/modules). Host kernel is Arch; usbip's kernel
+  interface is stable across distro versions (userspace 2.0 is fine).
+- Caveats: TCP-tunneled USB — fine for serial/JTAG/debug/logic-analyzer,
+  poor for isochronous devices; vhci SuperSpeed support is kernel-dependent;
+  attaching on the host instead needs zero container changes (usb-hotplug
+  already suffices).
+
 ## Split apt into per-group/per-addon features for layer caching
 
 Replace the single merged `apt-packages:1` entry with generated local
