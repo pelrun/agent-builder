@@ -25,9 +25,10 @@ agent-builder/
 ```
 
 This repo **self-hosts**: its own `.devcontainer/` is generated output;
-`python3 dcgen.py --refresh .` reproduces it. Local features live in
-`features/` (one dir per feature) and are copied into target repos at
-generation time.
+`python3 dcgen.py --preset agent-builder` reproduces it.
+
+Local features live in `features/` (one dir per feature) and are copied into the container
+configuration at generation time, rather than requiring them to be published.
 
 ## Usage
 
@@ -54,7 +55,7 @@ python3 dcgen.py --sync-pi              # refresh ./.devcontainer/pi from pi-mas
 | `--features-repo PATH` | override features dir location |
 | `--list` | print features, apt groups, addons, presets |
 | `--dry-run` | print everything (config + planned copies) without writing |
-| `--verify JSONFILE` | compare generated result against an existing devcontainer.json; no write; **exit 2** if different |
+| `--verify JSONFILE` | compare the selected configuration (from `--preset`, `--refresh`, or the wizard) against an existing devcontainer.json |
 | `--sync-features` | refresh `./`-referenced local features in target (in place) |
 | `--sync-pi` | sync `pi-master/` into `<target>/.devcontainer/pi` (copy-if-older, state-safe) |
 
@@ -85,6 +86,9 @@ carry a longer help text — press `h` (or `h <number>` in the plain fallback).
 
 ## pi config (`.devcontainer/pi`)
 
+This tool is primarily intended for managing instances of the Pi coding agent,
+so it does some extra steps for every deployed container.
+
 `.devcontainer/pi` is bind-mounted as `~/.pi`, so after first boot it is
 runtime state: generation bootstraps it from `pi-master/` only when it is
 missing or empty, and never touches an existing config. `--sync-pi` is the
@@ -92,10 +96,8 @@ explicit, state-safe updater. Full state rules: [`AGENTS.md`](AGENTS.md).
 
 ## Verifying / migrating existing repos
 
+Use the following to compare a previously generated configuration to a preset:
+
 ```bash
 python3 dcgen.py --preset <name> --verify .devcontainer/devcontainer.json
 ```
-
-parity-checks a preset against an existing config without writing (exit 2 on
-differences). Expected diffs and migration status per repo:
-[`CATALOG.md`](CATALOG.md).

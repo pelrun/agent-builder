@@ -828,7 +828,7 @@ def main():
     ap.add_argument("--list", action="store_true", help="list catalog contents and exit")
     ap.add_argument("--dry-run", action="store_true", help="print instead of writing")
     ap.add_argument("--verify", metavar="EXISTING",
-                    help="compare result against an existing devcontainer.json (no write); exit 2 if different")
+                    help="compare the selected configuration against an existing devcontainer.json (no write); exit 2 if different")
     ap.add_argument("--sync-features", action="store_true",
                     help="refresh ./-referenced local features in target from the catalog features dir")
     ap.add_argument("--sync-pi", action="store_true",
@@ -840,7 +840,7 @@ def main():
     feats_src = resolve_features_repo(catalog, args.features_repo)
     pi_master = resolve_pi_master(catalog)
     interactive = sys.stdin.isatty() and sys.stdout.isatty() and not args.preset \
-        and not args.verify and not args.sync_features and not args.sync_pi and not args.list \
+        and not args.sync_features and not args.sync_pi and not args.list \
         and not args.refresh
     ui = UI(interactive)
 
