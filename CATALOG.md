@@ -58,46 +58,39 @@ Selected groups merge into one deduplicated `apt-packages` entry.
 
 ## Addons
 
-Active: `host-gateway`, `usb-hotplug` / `usb-basic` (mutually exclusive),
-`host-ipc`, `gui-bridge` (X11/Wayland), `pi-env`, `pi-config` (bootstraps +
-mounts `.devcontainer/pi`), `ghidra-mount`, `ghidra-home-env`, `ssh-mount`,
-`uv`, `ghidra-mcp-bridge`, `remote-user`, `polywork-mounts` (machine-specific
-cross-repo mounts used by agent-builder), and `git-credential-libsecret` —
-host libsecret credential helper via D-Bus Secret Service: installs
-`libsecret-1-0` (+ `libsecret-1-dev` / `libglib2.0-dev` build deps as
-`apt_packages`), mounts the host session bus
-(`$XDG_RUNTIME_DIR/bus` → `/tmp/host-dbus/bus`) with
-`DBUS_SESSION_BUS_ADDRESS` set, and builds `git-credential-libsecret`
-post-create from git's `contrib/credential/libsecret` (Debian does not ship
-the binary) into `~/.local/bin`, registering it as a global credential
-helper (with `credential.useHttpPath true`, so stored credentials are
-scoped to the individual repository path). Pairs with the host
-`.gitconfig` that devcontainers copy in.
+Default ✓ = pre-checked in the wizard.
 
-Deprecated — pending migration of the repos that still use them; do not
-select for new containers:
+| Addon | Default | Notes |
+|---|---|---|
+| `host-gateway` | ✓ | `host.docker.internal` resolves to the host |
+| `usb-hotplug` | | USB passthrough, incl. devices plugged in later (conflicts with `usb-basic`) |
+| `usb-basic` | | USB passthrough, devices present at start only (conflicts with `usb-hotplug`) |
+| `host-ipc` | | share the host IPC namespace |
+| `gui-bridge` | | X11/Wayland GUI apps from the host display |
+| `pi-config` | ✓ | bind-mount the repo's `.devcontainer/pi` as `~/.pi` (materialized from `pi-master`) |
+| `ssh-mount` | | bind-mount host `~/.ssh` — for HTTPS git auth prefer `git-credential-libsecret` |
+| `uv` | | install `uv` (post-create) |
+| `remote-user` | | run as `vscode` user, match host UID |
+| `polywork-mounts` | | machine-specific: mount the other repos into `/workspaces` (host layout `~/github/*`, `~/Projects/*`) |
+| `git-credential-libsecret` | ✓ | host libsecret credential helper over D-Bus: mounts the host session bus, builds the helper post-create from git's `contrib` (Debian does not ship the binary), registers it globally with `credential.useHttpPath` (per-repo credential scoping); pairs with the host `.gitconfig` that devcontainers copy in |
 
-| Addon | Superseded by |
-|---|---|
-| `ghidra-mount` | ghidra feature (installs to `/opt/ghidra`) |
-| `ghidra-home-env` | ghidra feature (sets `GHIDRA_INSTALL_DIR` itself); never combine with the feature — it would override `/opt/ghidra` |
-| `ghidra-mcp-bridge` | bundled in the ghidra feature |
+Removed with the ghidra migration: `ghidra-mount`, `ghidra-home-env`,
+`ghidra-mcp-bridge` (superseded by the ghidra feature) and `pi-env`.
 
 ## Presets
 
 | Preset | Adds beyond the common base* |
 |---|---|
-| `agent-builder` | `polywork-mounts` (cross-repo mounts, machine-specific), `git-credential-libsecret` (host keyring credentials + D-Bus) |
-| `blackmagic` | arm-embedded packages |
-| `blepoolsensor` | renode 1.17.0, jdk/arm-embedded/logic-analyzer groups, remote-user, usb-hotplug, host-ipc, gui-bridge, ghidra-mount + ghidra-home-env, ssh-mount, uv, ghidra-mcp-bridge |
-| `cpc-workspace` | cpc-build packages, usb-basic (commented-out cpctelera post-create preserved) |
-| `headunit` | ghidra + jadx 1.5.6, arm-embedded/arm-cross-binutils/android-re groups, ghidra-mount |
-| `nas-cleanup` | usb-basic, ghidra-mount + ghidra-home-env, ssh-mount |
+| `agent-builder` | `polywork-mounts` (cross-repo mounts, machine-specific) |
+| `blackmagic` | arm-embedded group |
+| `blepoolsensor` | renode 1.17.0, ghidra feature (`MCPSERVER=ghidramcp`), jdk/arm-embedded/logic-analyzer groups, usb-hotplug, host-ipc, gui-bridge, ssh-mount, uv |
+| `cpc-workspace` | cpc-build group, usb-basic |
+| `headunit` | ghidra + jadx 1.5.6, arm-embedded/arm-cross-binutils/android-re groups |
+| `nas-cleanup` | ssh-mount |
 
 \* common base in every preset: `base:trixie`, common-utils, node 26, python
-os-provided, **pi feature**, core apt group, host-gateway, pi-config. The
-`pi-env` addon is present in all presets except blepoolsensor and nas-cleanup
-(their original configs never set those variables).
+os-provided, **pi feature**, core apt group, host-gateway, pi-config,
+git-credential-libsecret.
 
 ## pi-master MCP inventory (`agent/mcp.json`)
 
@@ -128,11 +121,13 @@ servers: [`AGENTS.md`](AGENTS.md).
 - **headunit**: apt dedupe (`dexdump`, `vim`, `xxd` were listed twice).
 - **blepoolsensor**: invalid package `arm-none-eabi-gcc` (a binary name, not
   a Debian package) replaced by `gcc-arm-none-eabi` + `python3-pyocd`.
+- **blepoolsensor, headunit, nas-cleanup**: ghidra migration (ghidra feature
+  replaces the `ghidra-mount`/`ghidra-home-env`/`ghidra-mcp-bridge` addons;
+  nas-cleanup drops Ghidra entirely).
 
-Pending migrations (presets deliberately keep the deprecated addons until
-done): blepoolsensor, nas-cleanup, headunit → switch ghidra-mount/env/bridge
-addons to the ghidra feature, then remove the deprecated addon entries from
-the catalog.
+The ghidra addon migration is complete: the deprecated addons and `pi-env`
+have been removed from the catalog, and every preset now validates against
+it (no dangling references).
 
 Known data issues in the originals, preserved as-is until migrated:
 nas-cleanup's original file had a missing comma (invalid JSON — the lenient
