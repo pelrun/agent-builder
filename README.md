@@ -34,15 +34,7 @@ configuration at generation time, rather than requiring them to be published.
 Run **from the directory you want to generate into**.
 
 ```bash
-python3 dcgen.py                        # interactive wizard
-python3 dcgen.py --list                 # dump catalog contents
-python3 dcgen.py --preset <name>        # reproduce a known config, no prompts
-python3 dcgen.py --preset <name> --dry-run
-python3 dcgen.py --preset <name> --verify .devcontainer/devcontainer.json
-python3 dcgen.py --preset <name> --show      # show the selection as a catalog.json preset entry
-python3 dcgen.py --refresh              # refreshes current config from detected preset, no prompts
-python3 dcgen.py --sync-features        # refresh ./-referenced features from features/
-python3 dcgen.py --sync-pi              # refresh ./.devcontainer/pi from pi-master
+python dcgen.py [<options>] [<target>]
 ```
 
 | Option | Meaning |
@@ -65,6 +57,19 @@ Exit codes: `0` ok · `1` usage/catalog error · `2` verify differences.
 Interactive input can be interrupted safely: EOF/Ctrl-C at any prompt aborts
 without writing.
 
+## Examples
+
+```bash
+python3 dcgen.py                        # interactive wizard
+python3 dcgen.py --list                 # dump catalog contents
+python3 dcgen.py --preset agent-builder # non-interactively generate from the "agent-builder" preset
+python3 dcgen.py --preset worker --verify .devcontainer/devcontainer.json # Diff an existing devcontainer.json against the preset "worker"
+python3 dcgen.py --preset myproject --dry-run # Show what would be created for the "myproject" preset but do not write.
+python3 dcgen.py --show                 # Run the wizard and show the selected config as a catalog.json preset.
+python3 dcgen.py --refresh              # refreshes current config from detected preset, no prompts
+python3 dcgen.py --sync-pi              # refresh ./.devcontainer/pi from pi-master
+```
+
 ## What the wizard asks
 
 0. Offers to refresh a pre-existing configuration if it matches a known preset.
@@ -78,11 +83,9 @@ without writing.
 5. **Environment addons** — runArgs / mounts / containerEnv /
    postCreateCommand fragments. Conflicting selections warn;
    unselected recommendations are noted.
-6. Option prompts for selected features that define them (locked features are
-   never prompted).
-7. Review summary → confirm → generate. Afterwards there is an offer to save
-   the configuration as a preset in `catalog.json` (extras and custom images
-   cannot be captured by presets and are warned about).
+6. Option prompts for selected features that define them.
+7. Review summary → confirm → generate.
+8. Offer to save the configuration as a preset in `catalog.json`
 
 Selection menus show a one-line description per item; items marked `(h)`
 carry a longer help text — press `h` (or `h <number>` in the plain fallback).
