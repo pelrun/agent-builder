@@ -33,8 +33,8 @@ presets needs no code changes. Rules:
   narrative, migration stories, or "was X, now Y" notes.
 - New presets can be authored without hand-editing: an interactive wizard
   run offers to save the configuration as a preset, and
-  `python3 dcgen.py --preset <name> --profile` prints any selection as a
-  paste-ready catalog.json profile. Always validate a new preset with
+  `python3 dcgen.py --preset <name> --show` prints any selection as a
+  paste-ready catalog.json preset entry. Always validate a new preset with
   `--preset <id> --dry-run` (and `--verify` against the source container
   if there is one).
 

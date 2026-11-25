@@ -885,8 +885,8 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="print instead of writing")
     ap.add_argument("--verify", metavar="EXISTING",
                     help="compare the selected configuration against an existing devcontainer.json (no write); exit 2 if different")
-    ap.add_argument("--profile", action="store_true",
-                    help="show the selected configuration as a catalog.json preset profile (no write)")
+    ap.add_argument("--show", action="store_true",
+                    help="show the selected configuration as a catalog.json preset entry (no write)")
     ap.add_argument("--sync-features", action="store_true",
                     help="refresh ./-referenced local features in target from the catalog features dir")
     ap.add_argument("--sync-pi", action="store_true",
@@ -974,7 +974,7 @@ def main():
     for w in warnings:
         print(f"WARNING: {w}", file=sys.stderr)
 
-    if args.profile:
+    if args.show:
         preset_id = spec.get("_preset") or sanitize_preset_id(spec["name"])
         print(json.dumps({preset_id: preset_profile(spec)}, indent='\t'))
         return 0
