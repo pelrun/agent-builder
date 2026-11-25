@@ -61,7 +61,7 @@ Default ✓ = pre-checked in the wizard.
 | Addon | Default | Notes |
 |---|---|---|
 | `host-gateway` | ✓ | `host.docker.internal` resolves to the host |
-| `usb-cgroup` | | rw bind of the host vhci sysfs dir + device-cgroup rule for USB nodes (major 189) — no SYS_ADMIN, no /dev/bus mounts; required by the `usbip` feature; needs `vhci_hcd` loaded on the host **before container creation** |
+| `usb-cgroup` | | hidden from the wizard; rw bind of the host vhci sysfs dir + device-cgroup rule for USB nodes (major 189) — no /dev/bus mounts; auto-selected by the `usbip` feature; needs `vhci_hcd` loaded on the host **before container creation** |
 | `host-ipc` | | share the host IPC namespace |
 | `gui-bridge` | | X11/Wayland GUI apps from the host display |
 | `pi-config` | ✓ | bind-mount the repo's `.devcontainer/pi` as `~/.pi` (materialized from `pi-master`) |

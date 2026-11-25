@@ -77,7 +77,10 @@ addons declare), `remoteUser`/`updateRemoteUserUID`. Extras:
 `commented_postcreate` (emitted as `//` lines), `conflicts` (selection
 warns), `recommends` (unselected-but-relevant notes),
 `requires_path` (warns when a path is missing in the target),
-`materializes` (bootstraps a directory from a master copy, e.g. pi-config).
+`materializes` (bootstraps a directory from a master copy, e.g. pi-config),
+`hidden` (never shown in the wizard pickers — for addons that exist only to
+be auto-selected via `requires_addons`; presets may still list them
+explicitly, and `--list` shows them with a `hidden` marker).
 Addons carry `comment` / `help` like features.
 
 ### `presets`

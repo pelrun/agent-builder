@@ -291,6 +291,7 @@
 		{
 			"id": "usb-cgroup",
 			"default": false,
+			"hidden": true,
 			"comment": "Allow dynamic USB device nodes (usbip attach) - no mounts of /dev/bus",
 			"help": "Enables usbip-attach from inside the container: bind-mounts the host's vhci kobject dir onto its canonical path (rw bind, so the vhci attach sysfs write works despite the container's ro sysfs - no SYS_ADMIN) plus the device-cgroup rule for dynamically created USB nodes (major 189) so the mknod'd node can be opened. Requires vhci_hcd loaded on the host BEFORE container creation (the mount source must exist). Required by the usbip feature.",
 			"runArgs": [

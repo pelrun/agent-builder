@@ -710,7 +710,7 @@ def interactive_spec(catalog, ui, target, feats_src):
 
     addon_items = [
         {"id": a["id"], "label": a["id"], "desc": a.get("comment", ""), "help": a.get("help", ""), "checked": a.get("default", False)}
-        for a in catalog["addons"]
+        for a in catalog["addons"] if not a.get("hidden")
     ]
     selected_addons = ui.multi_select("Environment addons", addon_items)
 
@@ -864,7 +864,7 @@ def main():
         for g in catalog["apt_groups"]:
             print(f"APT      {g['id']:15} default={'y' if g.get('default') else 'n'}  {', '.join(g['packages'])}")
         for a in catalog["addons"]:
-            print(f"ADDON    {a['id']:18} default={'y' if a.get('default') else 'n'}  {a.get('comment', '')}{'  (+help)' if a.get('help') else ''}")
+            print(f"ADDON    {a['id']:18} default={'y' if a.get('default') else 'n'}{' hidden' if a.get('hidden') else ''}  {a.get('comment', '')}{'  (+help)' if a.get('help') else ''}")
         for name, p in catalog["presets"].items():
             print(f"PRESET   {name:15} features={','.join(p['features'])}  apt={'+'.join(p['apt_groups'])}  addons={','.join(p['addons'])}")
         return 0
