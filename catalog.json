@@ -289,38 +289,12 @@
 			]
 		},
 		{
-			"id": "usb-hotplug",
-			"default": false,
-			"comment": "USB passthrough, incl. devices plugged in later",
-			"help": "Mounts /dev/bus/usb and grants a usb device-cgroup rule, so devices connected after container start appear automatically - including devices the host attaches via usbip (vhci devices land on the host bus like physical ones; attachment is managed on the host, no container-side usbip tooling needed). Conflicts with usb-basic.",
-			"runArgs": [
-				"--device-cgroup-rule=c 189:* rmw"
-			],
-			"mounts": [
-				"source=/dev/bus/usb,target=/dev/bus/usb,type=bind"
-			],
-			"conflicts": [
-				"usb-basic"
-			]
-		},
-		{
-			"id": "usb-basic",
-			"default": false,
-			"comment": "USB passthrough (devices present at start only)",
-			"help": "Mounts /dev/bus/usb at container creation. Devices plugged in afterwards are not visible - use usb-hotplug for that. Conflicts with usb-hotplug.",
-			"runArgs": [
-				"--device=/dev/bus/usb"
-			],
-			"conflicts": [
-				"usb-hotplug"
-			]
-		},
-		{
 			"id": "usb-cgroup",
 			"default": false,
 			"comment": "Allow dynamic USB device nodes (usbip attach) - no mounts",
-			"help": "Grants the device cgroup access to dynamically created USB nodes (major 189) so usbip-attach can create and open them inside the container. No mounts and no /dev/bus access. Required by the usbip feature.",
+			"help": "Enables usbip-attach from inside the container: --cap-add SYS_ADMIN (the runtime mounts sysfs read-only without it, and vhci attach is a sysfs write) plus the device-cgroup rule for dynamically created USB nodes (major 189) so the mknod'd node can be opened. No mounts and no /dev/bus access. Required by the usbip feature.",
 			"runArgs": [
+				"--cap-add=SYS_ADMIN",
 				"--device-cgroup-rule=c 189:* rmw"
 			]
 		},
@@ -472,7 +446,8 @@
 				},
 				"ghidra": {
 					"mcpServer": "ghidramcp"
-				}
+				},
+				"usbip": {}
 			},
 			"apt_groups": [
 				"core",
@@ -482,7 +457,7 @@
 			],
 			"addons": [
 				"host-gateway",
-				"usb-hotplug",
+				"usb-cgroup",
 				"host-ipc",
 				"gui-bridge",
 				"pi-config",
@@ -497,7 +472,8 @@
 				"common-utils": {},
 				"node": {},
 				"python": {},
-				"pi": {}
+				"pi": {},
+				"usbip": {}
 			},
 			"apt_groups": [
 				"core",
@@ -505,7 +481,7 @@
 			],
 			"addons": [
 				"host-gateway",
-				"usb-basic",
+				"usb-cgroup",
 				"pi-config",
 				"git-credential-libsecret"
 			]

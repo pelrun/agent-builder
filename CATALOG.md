@@ -61,9 +61,7 @@ Default ✓ = pre-checked in the wizard.
 | Addon | Default | Notes |
 |---|---|---|
 | `host-gateway` | ✓ | `host.docker.internal` resolves to the host |
-| `usb-hotplug` | | USB passthrough, incl. devices plugged in later or attached via usbip on the host (conflicts with `usb-basic`) |
-| `usb-basic` | | USB passthrough, devices present at start only (conflicts with `usb-hotplug`) |
-| `usb-cgroup` | | device-cgroup rule for dynamically created USB nodes (major 189) — no mounts; required by the `usbip` feature |
+| `usb-cgroup` | | device-cgroup rule + SYS_ADMIN for dynamically created USB nodes (major 189) — no mounts; required by the `usbip` feature |
 | `host-ipc` | | share the host IPC namespace |
 | `gui-bridge` | | X11/Wayland GUI apps from the host display |
 | `pi-config` | ✓ | bind-mount the repo's `.devcontainer/pi` as `~/.pi` (materialized from `pi-master`) |
@@ -79,8 +77,8 @@ Default ✓ = pre-checked in the wizard.
 |---|---|
 | `agent-builder` | `polywork-mounts` (cross-repo mounts, machine-specific) |
 | `blackmagic` | arm-embedded group |
-| `blepoolsensor` | renode 1.17.0, ghidra feature (`MCPSERVER=ghidramcp`), jdk/arm-embedded/logic-analyzer groups, usb-hotplug, host-ipc, gui-bridge, ssh-mount, uv |
-| `cpc-workspace` | cpc-build group, usb-basic |
+| `blepoolsensor` | renode 1.17.0, ghidra feature (`MCPSERVER=ghidramcp`), usbip (usb-cgroup), jdk/arm-embedded/logic-analyzer groups, host-ipc, gui-bridge, ssh-mount, uv |
+| `cpc-workspace` | cpc-build group, usbip (usb-cgroup) |
 | `headunit` | ghidra + jadx 1.5.6, arm-embedded/arm-cross-binutils/android-re groups |
 | `nas-cleanup` | ssh-mount |
 

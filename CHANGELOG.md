@@ -29,6 +29,11 @@ CATALOG.md, AGENTS.md) describe current state only.
   /dev/bus mounts — the helper mknods the node locally and the addon's
   device-cgroup rule allows opening it. Host side: usbipd + modprobe
   vhci_hcd.
+- USB addons replaced: `usb-hotplug` / `usb-basic` (host /dev/bus mounts)
+  removed from the catalog; blepoolsensor and cpc-workspace presets migrated
+  to the `usbip` feature + `usb-cgroup` addon (which also carries
+  `--cap-add SYS_ADMIN`: the runtime mounts sysfs read-only without it, and
+  vhci attach is a sysfs write). `usbip` skill added to pi-master.
 
 ## 2026-11-24
 
