@@ -21,6 +21,14 @@ CATALOG.md, AGENTS.md) describe current state only.
   intentionally drops Ghidra entirely).
 - Documentation restructure: agent-facing fine print split into AGENTS.md;
   docs now carry current state only, history lives here.
+- `--show`: print any selection (`--preset` / `--refresh` / wizard) as a
+  paste-ready catalog.json preset entry; interactive generation ends with
+  an offer to save the configuration as a preset (id prompt, overwrite
+  confirmation; extras and custom images are warned as not capturable).
+- `--verify` reports apt package differences as set differences (only the
+  packages unique to each side) instead of dumping both package lists.
+- Wizard: `hidden` property for addons — never shown in the pickers, for
+  addons that exist only to be auto-selected (`usb-cgroup`).
 - Catalog-wide `containerEnv` support; sets `TZ: Australia/Melbourne` in
   every generated container (the container clock was previously UTC, so
   commits recorded UTC dates after local midnight).
