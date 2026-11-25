@@ -108,6 +108,13 @@ pi master copy. Resolution order: `--features-repo` flag >
 
 ## Generation semantics
 
+`--modify [PRESET]` re-runs the wizard pre-seeded from a preset: every
+picker starts with the preset's selections checked, option prompts default
+to the preset's option values, and existing extra mounts are kept. Selected
+features are always emitted, storing only prompt answers that differ from
+the shown default (this also keeps prompt-less features like `usbip`, which
+were previously dropped by the wizard).
+
 - Output house style: tab-indented JSONC, one `// comment` above each
   feature (from its catalog `comment`) and above the apt entry (provenance).
 - `runArgs` and `mounts` are deduplicated preserving order; the finished

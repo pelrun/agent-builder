@@ -27,6 +27,11 @@ CATALOG.md, AGENTS.md) describe current state only.
   confirmation; extras and custom images are warned as not capturable).
 - `--verify` reports apt package differences as set differences (only the
   packages unique to each side) instead of dumping both package lists.
+- `--modify [PRESET]`: re-run the wizard pre-seeded from a specified or
+  detected preset — all-defaults modify regenerates a byte-identical config.
+  Also fixes a wizard bug where prompt-less selected features (usbip) were
+  dropped, and prompt answers equal to the shown default are no longer
+  stored as redundant overrides.
 - Wizard: `hidden` property for addons — never shown in the pickers, for
   addons that exist only to be auto-selected (`usb-cgroup`).
 - Extra workspace mounts: presets gain an optional `extra_mounts` list

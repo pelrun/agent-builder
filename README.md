@@ -42,6 +42,7 @@ python dcgen.py [<options>] [<target>]
 | `target` (positional) | target repo dir, default `.` |
 | `--preset NAME` | non-interactive generation from a catalog preset |
 | `--refresh` | re-apply the preset matching this devcontainer, no prompt; error if no match |
+| `--modify [PRESET]` | re-run the wizard pre-seeded from a preset (default: the detected one) |
 | `--name` / `--image` | override project name / base image |
 | `--catalog PATH` | alternate catalog (default: `catalog.json` next to the script) |
 | `--features-repo PATH` | override features dir location |
@@ -67,6 +68,7 @@ python3 dcgen.py --preset worker --verify .devcontainer/devcontainer.json # Diff
 python3 dcgen.py --preset myproject --dry-run # Show what would be created for the "myproject" preset but do not write.
 python3 dcgen.py --show                 # Run the wizard and show the selected config as a catalog.json preset.
 python3 dcgen.py --refresh              # refreshes current config from detected preset, no prompts
+python3 dcgen.py --modify [preset]      # re-run the wizard pre-seeded from a specified or detected preset
 python3 dcgen.py --sync-pi              # refresh ./.devcontainer/pi from pi-master
 ```
 

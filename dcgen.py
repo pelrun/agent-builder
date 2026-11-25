@@ -692,21 +692,27 @@ class UI:
         return raw in ("y", "yes")
 
 
-def interactive_spec(catalog, ui, target, feats_src):
+def interactive_spec(catalog, ui, target, feats_src, base_spec=None):
+    """Wizard. base_spec (a preset-derived spec) pre-seeds every prompt so
+    --modify starts from that preset's selections instead of catalog defaults."""
     feats, groups, addons = catalog_index(catalog)
+    base = base_spec or {}
+    base_features = set(base.get("features", {}))
     spec = {"target": str(target)}
 
-    spec["name"] = ui.ask("Project name", target.name)
-    spec["image"] = ui.ask("Base image", catalog.get("base_image", "mcr.microsoft.com/devcontainers/base:trixie"))
+    spec["name"] = ui.ask("Project name", base.get("name") or target.name)
+    spec["image"] = ui.ask("Base image", base.get("image") or catalog.get("base_image", "mcr.microsoft.com/devcontainers/base:trixie"))
 
     rt_items = [
-        {"id": f["id"], "label": f["id"], "desc": f.get("comment", ""), "help": f.get("help", ""), "checked": f.get("default", False)}
+        {"id": f["id"], "label": f["id"], "desc": f.get("comment", ""), "help": f.get("help", ""),
+         "checked": f.get("default", False) or f["id"] in base_features}
         for f in catalog["features"] if f["kind"] == "feature" and not f.get("locked")
     ]
     selected_rt = ui.multi_select("Language runtimes", rt_items)
 
     tool_items = [
-        {"id": f["id"], "label": f["id"], "desc": f.get("comment", ""), "help": f.get("help", ""), "checked": f.get("default", False)}
+        {"id": f["id"], "label": f["id"], "desc": f.get("comment", ""), "help": f.get("help", ""),
+         "checked": f.get("default", False) or f["id"] in base_features}
         for f in catalog["features"] if f["kind"] == "local" and not f.get("locked")
     ]
     selected_tools = ui.multi_select("Tool features (copied from the features dir)", tool_items)
@@ -719,7 +725,7 @@ def interactive_spec(catalog, ui, target, feats_src):
         {"id": g["id"], "label": g["id"],
          "desc": g.get("comment", ""),
          "help": "packages: " + ", ".join(g["packages"]),
-         "checked": g.get("default", False)}
+         "checked": g.get("default", False) or g["id"] in base.get("apt_groups", [])}
         for g in catalog["apt_groups"]
     ]
     locked = ["core"] if "core" in groups else []
@@ -729,7 +735,11 @@ def interactive_spec(catalog, ui, target, feats_src):
 
     # extra workspace mounts: one per prompt until blank; a bare host path is
     # shorthand for source=<path>,target=/workspaces/<basename>,type=bind
-    extra_mounts = []
+    extra_mounts = list(base.get("extra_mounts", []))
+    if extra_mounts:
+        print("existing extra workspace mounts (kept; add more below):")
+        for m in extra_mounts:
+            print(f"  - {m}")
     while True:
         m = ui.ask("Extra workspace mount (blank=done; bare path targets /workspaces/<basename>)", "").strip()
         if not m:
@@ -739,7 +749,8 @@ def interactive_spec(catalog, ui, target, feats_src):
         extra_mounts.append(m)
 
     addon_items = [
-        {"id": a["id"], "label": a["id"], "desc": a.get("comment", ""), "help": a.get("help", ""), "checked": a.get("default", False)}
+        {"id": a["id"], "label": a["id"], "desc": a.get("comment", ""), "help": a.get("help", ""),
+         "checked": a.get("default", False) or a["id"] in base.get("addons", [])}
         for a in catalog["addons"] if not a.get("hidden")
     ]
     selected_addons = ui.multi_select("Environment addons", addon_items)
@@ -755,15 +766,21 @@ def interactive_spec(catalog, ui, target, feats_src):
 
     feature_opts = {}
     for fid in selected:
+        base_opts = base.get("features", {}).get(fid, {})
         if feats[fid].get("locked"):
-            # locked features: always emitted with catalog default options, no prompts
-            feature_opts[fid] = dict(feats[fid].get("options", {}))
+            # locked features: always emitted with preset (or catalog default) options, no prompts
+            feature_opts[fid] = dict(base_opts or feats[fid].get("options", {}))
             continue
-        opts = {}
+        # start from the preset's (or catalog default) options; prompt answers
+        # that differ from the shown default are stored as overrides. Selected
+        # features are always kept, even without prompts (e.g. usbip).
+        opts = dict(base_opts if base_spec else feats[fid].get("options", {}))
         for pr in feats[fid].get("prompts", []):
-            opts[pr["option"]] = ui.ask_value(pr["prompt"], pr["default"], pr.get("proposals"))
-        if opts:
-            feature_opts[fid] = opts
+            default = base_opts.get(pr["option"], pr["default"])
+            val = ui.ask_value(pr["prompt"], default, pr.get("proposals"))
+            if val != default:
+                opts[pr["option"]] = val
+        feature_opts[fid] = opts
 
     ids = set(selected_addons)
     for aid in selected_addons:
@@ -897,6 +914,8 @@ def main():
     ap.add_argument("--preset", help="use a named preset from the catalog")
     ap.add_argument("--refresh", action="store_true",
                     help="re-apply the preset matching this devcontainer (no prompt); errors if nothing matches")
+    ap.add_argument("--modify", nargs="?", const="", metavar="PRESET",
+                    help="re-run the wizard pre-seeded from PRESET (default: the detected preset)")
     ap.add_argument("--name", help="override project name")
     ap.add_argument("--image", help="override base image")
     ap.add_argument("--catalog", default=str(DEFAULT_CATALOG))
@@ -921,6 +940,11 @@ def main():
         and not args.sync_features and not args.sync_pi and not args.list \
         and not args.refresh
     ui = UI(interactive)
+
+    if args.modify is not None and (args.refresh or args.preset):
+        sys.exit("--modify cannot be combined with --preset or --refresh")
+    if args.modify is not None and not interactive:
+        sys.exit("--modify runs the wizard; run it in a terminal")
 
     if args.list:
         for f in catalog["features"]:
@@ -970,6 +994,17 @@ def main():
                      f"(existing name or directory '{target.name}')")
         print(f"refresh: re-applying preset '{detected}'")
         spec = preset_spec(catalog, detected, target)
+    elif args.modify is not None:
+        pid = args.modify or detect_preset(catalog, target)
+        if not pid:
+            sys.exit(f"--modify: no preset matches this devcontainer "
+                     f"(existing name or directory '{target.name}'); pass one: --modify <preset>")
+        if pid not in catalog["presets"]:
+            sys.exit(f"unknown preset '{pid}'. known: {', '.join(catalog['presets'])}")
+        print(f"modify: wizard pre-seeded from preset '{pid}'")
+        spec = interactive_spec(catalog, ui, target, feats_src,
+                                base_spec=preset_spec(catalog, pid, target))
+        spec["_preset"] = pid
     elif interactive:
         detected = detect_preset(catalog, target)
         if detected and ui.confirm(
