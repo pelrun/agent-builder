@@ -92,6 +92,9 @@ Addons carry `comment` / `help` like features.
 ### `presets`
 Named, non-interactive selections reproducing existing repo configs:
 `name`, `image`, `features` (with options), `apt_groups`, `addons`,
+`extra_mounts` (workspace mounts merged after addon mounts; the wizard
+prompts for them, accepting bare host paths as shorthand for
+`source=<path>,target=/workspaces/<basename>,type=bind`),
 `commented_features` / `commented_mounts` / `commented_postcreate`
 (deliberately-disabled entries emitted as `// {...}` lines so they survive
 regeneration as documentation).

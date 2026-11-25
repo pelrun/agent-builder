@@ -79,7 +79,8 @@ python3 dcgen.py --sync-pi              # refresh ./.devcontainer/pi from pi-mas
 3. **Tool features** — local features from `features/`.
 4. **apt package groups** — logical groups that merge into one deduplicated
    `apt-packages` entry (locked groups are always on). Afterwards: free-text
-   extra packages.
+   extra packages, then extra workspace mounts (one per prompt; a bare host
+   path targets `/workspaces/<basename>`).
 5. **Environment addons** — runArgs / mounts / containerEnv /
    postCreateCommand fragments. Conflicting selections warn;
    unselected recommendations are noted.

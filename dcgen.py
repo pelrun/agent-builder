@@ -301,7 +301,7 @@ def resolve_addon_requires(catalog, spec, warnings):
 
 
 def build_config(catalog, spec):
-    """spec keys: name, image, features{id:opts}, apt_groups[], extra_packages[],
+    """spec keys: name, image, features{id:opts}, apt_groups[], extra_packages[], extra_mounts[],
     addons[], commented_features[], commented_mounts[], commented_postcreate{}, target"""
     feats, groups, addons = catalog_index(catalog)
     key_comments = {}
@@ -390,6 +390,11 @@ def build_config(catalog, spec):
                 warnings.append(f"addon '{aid}': pi-master dir not found; '{mat}' will not be created")
             else:
                 spec["_materialize_pi"] = True
+    # extra workspace mounts (spec/preset level), validated then merged last
+    for m in spec.get("extra_mounts", []):
+        if "source=" not in m or "target=" not in m:
+            warnings.append(f"extra mount '{m}' lacks source=/target= (may be malformed)")
+        mounts.append(m)
     mounts.extend(Commented(m) for m in spec.get("commented_mounts", []))
     for k, v in spec.get("commented_postcreate", {}).items():
         post_create[k] = Commented(v)
@@ -722,6 +727,17 @@ def interactive_spec(catalog, ui, target, feats_src):
     extra_raw = ui.ask("Extra apt packages (comma-separated, blank=none)", "")
     extra = [p.strip() for p in extra_raw.split(",") if p.strip()]
 
+    # extra workspace mounts: one per prompt until blank; a bare host path is
+    # shorthand for source=<path>,target=/workspaces/<basename>,type=bind
+    extra_mounts = []
+    while True:
+        m = ui.ask("Extra workspace mount (blank=done; bare path targets /workspaces/<basename>)", "").strip()
+        if not m:
+            break
+        if "target=" not in m:
+            m = f"source={m},target=/workspaces/{os.path.basename(m.rstrip('/'))},type=bind"
+        extra_mounts.append(m)
+
     addon_items = [
         {"id": a["id"], "label": a["id"], "desc": a.get("comment", ""), "help": a.get("help", ""), "checked": a.get("default", False)}
         for a in catalog["addons"] if not a.get("hidden")
@@ -759,6 +775,7 @@ def interactive_spec(catalog, ui, target, feats_src):
         "features": feature_opts,
         "apt_groups": selected_groups,
         "extra_packages": extra,
+        "extra_mounts": extra_mounts,
         "addons": selected_addons,
     })
     return spec
@@ -802,6 +819,7 @@ def preset_spec(catalog, preset_name, target):
         "commented_features": list(p.get("commented_features", [])),
         "commented_mounts": list(p.get("commented_mounts", [])),
         "commented_postcreate": dict(p.get("commented_postcreate", {})),
+        "extra_mounts": list(p.get("extra_mounts", [])),
     }
 
 
@@ -821,6 +839,8 @@ def preset_profile(spec):
     for key in ("commented_features", "commented_mounts", "commented_postcreate"):
         if spec.get(key):
             profile[key] = spec[key]
+    if spec.get("extra_mounts"):
+        profile["extra_mounts"] = list(spec["extra_mounts"])
     return profile
 
 
@@ -922,7 +942,8 @@ def main():
         for a in catalog["addons"]:
             print(f"ADDON    {a['id']:18} default={'y' if a.get('default') else 'n'}{' hidden' if a.get('hidden') else ''}  {a.get('comment', '')}{'  (+help)' if a.get('help') else ''}")
         for name, p in catalog["presets"].items():
-            print(f"PRESET   {name:15} features={','.join(p['features'])}  apt={'+'.join(p['apt_groups'])}  addons={','.join(p['addons'])}")
+            extra = f"  +{len(p['extra_mounts'])} extra mounts" if p.get("extra_mounts") else ""
+            print(f"PRESET   {name:15} features={','.join(p['features'])}  apt={'+'.join(p['apt_groups'])}  addons={','.join(p['addons'])}{extra}")
         return 0
 
     if args.sync_features:
@@ -1002,6 +1023,7 @@ def main():
         apt_line = " + ".join(spec["apt_groups"]) or "(none)"
         if spec.get("extra_packages"):
             apt_line += f"  + extras: {', '.join(spec['extra_packages'])}"
+        print(f"mounts:   {', '.join(spec.get('extra_mounts', [])) or '(none extra)'}")
         print(f"apt:      {apt_line}")
         print(f"addons:   {', '.join(spec['addons']) or '(none)'}")
         if not ui.confirm("Generate devcontainer.json in " + str(target) + "?"):

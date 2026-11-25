@@ -29,6 +29,10 @@ CATALOG.md, AGENTS.md) describe current state only.
   packages unique to each side) instead of dumping both package lists.
 - Wizard: `hidden` property for addons — never shown in the pickers, for
   addons that exist only to be auto-selected (`usb-cgroup`).
+- Extra workspace mounts: presets gain an optional `extra_mounts` list
+  (merged after addon mounts) and the wizard asks for them — a bare host
+  path is shorthand for `source=<path>,target=/workspaces/<basename>,type=bind`.
+  `--list` marks presets carrying them.
 - Catalog-wide `containerEnv` support; sets `TZ: Australia/Melbourne` in
   every generated container (the container clock was previously UTC, so
   commits recorded UTC dates after local midnight).
