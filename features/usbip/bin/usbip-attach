@@ -6,9 +6,10 @@
 # $USBIP_HOST or host.docker.internal) or by any remote machine running
 # usbipd.
 #
-# Requires: vhci_hcd loaded on the kernel owner (the host), usbipd
-# reachable at HOST:3240, and the usb-cgroup addon's device rule so the
-# mknod'd node can be opened. Run 'usbip-detach' when done.
+# Requires: vhci_hcd loaded on the kernel owner (the host) before the
+# container was created (the vhci sysfs bind), usbipd reachable at
+# HOST:3240, and the usb-cgroup addon's device rule so the mknod'd node
+# can be opened. Run 'usbip-detach' when done.
 
 set -euo pipefail
 
@@ -43,32 +44,49 @@ if ! grep -qw vhci_hcd /proc/modules && [ ! -d /sys/devices/platform/vhci_hcd.0 
 	exit 1
 fi
 
-snapshot() { ls /sys/bus/usb/devices 2>/dev/null | grep -v '^usb' | sort; }
-
-BEFORE=$(snapshot)
-
 echo "Attaching $BUSID from $HOST_ARG ..."
 "${SUDO[@]}" usbip attach -r "$HOST_ARG" -b "$BUSID"
 
-# wait for the kernel to register the device in sysfs
+# wait for the import to appear in the vhci port list and enumerate
+# (kernel-side descriptor fetch runs over the network after the write).
+# match on the local device name (identical in every libusbip output
+# variant); the URL-style line is not printed by all kernel/user combos
+vhci_devs() {
+	"${SUDO[@]}" usbip port 2>/dev/null |
+		sed -n 's/^[[:space:]]*\([0-9][0-9.-]*\)[[:space:]]*-> .*/\1/p' |
+		sort
+}
+BEFORE=$(vhci_devs)
+
 DEV=""
-for _ in $(seq 1 20); do
-	DEV=$(comm -13 <(echo "$BEFORE") <(snapshot) | head -1 || true)
-	if [ -n "$DEV" ] && [ -r "/sys/bus/usb/devices/$DEV/busnum" ]; then
-		break
-	fi
-	DEV=""
+for _ in $(seq 1 40); do
+	DEV=$(comm -13 <(echo "$BEFORE") <(vhci_devs) | head -1 || true)
+	[ -n "$DEV" ] && break
 	sleep 0.25
 done
 
 if [ -z "$DEV" ]; then
-	echo "ERROR: attach completed but no new device appeared in sysfs." >&2
+	echo "ERROR: attach completed but the device never appeared in 'usbip port'." >&2
+	"${SUDO[@]}" usbip port >&2 || true
 	exit 1
 fi
 
-BUSNUM=$(cat "/sys/bus/usb/devices/$DEV/busnum")
-DEVNUM=$(cat "/sys/bus/usb/devices/$DEV/devnum")
-MINOR=$((BUSNUM * 128 + DEVNUM))
+# wait for the sysfs attrs (enumeration may lag the port registration)
+BUSNUM=""
+for _ in $(seq 1 20); do
+	if BUSNUM=$(cat "/sys/bus/usb/devices/$DEV/busnum" 2>/dev/null); then
+		[ -n "$BUSNUM" ] && break
+	fi
+	sleep 0.25
+done
+DEVNUM=$(cat "/sys/bus/usb/devices/$DEV/devnum" 2>/dev/null || true)
+
+if [ -z "$BUSNUM" ] || [ -z "$DEVNUM" ]; then
+	echo "ERROR: device $DEV registered but sysfs attrs never appeared." >&2
+	exit 1
+fi
+
+MINOR=$(((BUSNUM - 1) * 128 + DEVNUM - 1))   # usbfs: zero-based bus/dev
 NODE_DIR=$(printf '/dev/bus/usb/%03d' "$BUSNUM")
 NODE="$NODE_DIR/$(printf '%03d' "$DEVNUM")"
 
