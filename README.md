@@ -39,6 +39,7 @@ python3 dcgen.py --list                 # dump catalog contents
 python3 dcgen.py --preset <name>        # reproduce a known config, no prompts
 python3 dcgen.py --preset <name> --dry-run
 python3 dcgen.py --preset <name> --verify .devcontainer/devcontainer.json
+python3 dcgen.py --preset <name> --profile   # show the selection as a catalog.json preset profile
 python3 dcgen.py --refresh              # refreshes current config from detected preset, no prompts
 python3 dcgen.py --sync-features        # refresh ./-referenced features from features/
 python3 dcgen.py --sync-pi              # refresh ./.devcontainer/pi from pi-master
@@ -55,6 +56,7 @@ python3 dcgen.py --sync-pi              # refresh ./.devcontainer/pi from pi-mas
 | `--list` | print features, apt groups, addons, presets |
 | `--dry-run` | print everything (config + planned copies) without writing |
 | `--verify JSONFILE` | compare a config (from `--preset`, `--refresh`, or the wizard) against an existing devcontainer.json |
+| `--profile` | show the selected configuration as a catalog.json preset profile (no write) |
 | `--sync-features` | refresh `./`-referenced local features in target (in place) |
 | `--sync-pi` | sync `pi-master/` into `<target>/.devcontainer/pi` (copy-if-older, state-safe) |
 
@@ -78,7 +80,9 @@ without writing.
    unselected recommendations are noted.
 6. Option prompts for selected features that define them (locked features are
    never prompted).
-7. Review summary → confirm → generate.
+7. Review summary → confirm → generate. Afterwards there is an offer to save
+   the configuration as a preset in `catalog.json` (extras and custom images
+   cannot be captured by presets and are warned about).
 
 Selection menus show a one-line description per item; items marked `(h)`
 carry a longer help text — press `h` (or `h <number>` in the plain fallback).

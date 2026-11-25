@@ -31,6 +31,12 @@ presets needs no code changes. Rules:
   comments, and notable change history in `CHANGELOG.md`. The primary docs
   (README/CATALOG/AGENTS) describe current state only — no historical
   narrative, migration stories, or "was X, now Y" notes.
+- New presets can be authored without hand-editing: an interactive wizard
+  run offers to save the configuration as a preset, and
+  `python3 dcgen.py --preset <name> --profile` prints any selection as a
+  paste-ready catalog.json profile. Always validate a new preset with
+  `--preset <id> --dry-run` (and `--verify` against the source container
+  if there is one).
 
 ## Catalog schema
 

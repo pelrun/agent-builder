@@ -805,6 +805,46 @@ def preset_spec(catalog, preset_name, target):
     }
 
 
+def sanitize_preset_id(name):
+    pid = re.sub(r"[^a-z0-9-]+", "-", name.lower()).strip("-")
+    return pid or "preset"
+
+
+def preset_profile(spec):
+    """The catalog.json preset entry representing this spec."""
+    profile = {
+        "name": spec["name"],
+        "features": spec.get("features", {}),
+        "apt_groups": list(spec.get("apt_groups", [])),
+        "addons": list(spec.get("addons", [])),
+    }
+    for key in ("commented_features", "commented_mounts", "commented_postcreate"):
+        if spec.get(key):
+            profile[key] = spec[key]
+    return profile
+
+
+def save_preset(catalog_path, catalog, spec, ui):
+    """Append/overwrite a preset entry from an interactively generated spec."""
+    pid = ui.ask("Preset id", sanitize_preset_id(spec["name"])).strip()
+    if not pid:
+        print("aborted: no preset id")
+        return
+    if pid in catalog["presets"] and not ui.confirm(
+            f"Preset '{pid}' already exists. Overwrite?", default=False):
+        print("aborted")
+        return
+    if spec.get("extra_packages"):
+        print(f"WARNING: extra packages ({', '.join(spec['extra_packages'])}) cannot be "
+              "represented in a preset - consider an apt group.", file=sys.stderr)
+    if spec.get("image") and spec["image"] != catalog.get("base_image"):
+        print(f"WARNING: custom image {spec['image']} is not captured by presets.", file=sys.stderr)
+    catalog["presets"][pid] = preset_profile(spec)
+    catalog_path.write_text(json.dumps(catalog, indent='\t') + '\n')
+    print(f"saved preset '{pid}' to {catalog_path}")
+    print(f"validate with: python3 dcgen.py --preset {pid} --verify .devcontainer/devcontainer.json")
+
+
 # ---------------------------------------------------------------- main
 
 def detect_preset(catalog, target):
@@ -845,6 +885,8 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="print instead of writing")
     ap.add_argument("--verify", metavar="EXISTING",
                     help="compare the selected configuration against an existing devcontainer.json (no write); exit 2 if different")
+    ap.add_argument("--profile", action="store_true",
+                    help="show the selected configuration as a catalog.json preset profile (no write)")
     ap.add_argument("--sync-features", action="store_true",
                     help="refresh ./-referenced local features in target from the catalog features dir")
     ap.add_argument("--sync-pi", action="store_true",
@@ -932,6 +974,11 @@ def main():
     for w in warnings:
         print(f"WARNING: {w}", file=sys.stderr)
 
+    if args.profile:
+        preset_id = spec.get("_preset") or sanitize_preset_id(spec["name"])
+        print(json.dumps({preset_id: preset_profile(spec)}, indent='\t'))
+        return 0
+
     if args.verify:
         existing_path = Path(args.verify).expanduser().resolve()
         try:
@@ -971,6 +1018,9 @@ def main():
         if local_ids:
             print("  - local features were copied to .devcontainer/features/")
         print("  - optional: npx @devcontainers/cli lock --workspace-folder .")
+    if interactive and not args.dry_run:
+        if ui.confirm("Save this configuration as a preset in the catalog?"):
+            save_preset(Path(args.catalog).expanduser().resolve(), catalog, spec, ui)
     return 0
 
 
