@@ -31,9 +31,11 @@ CATALOG.md, AGENTS.md) describe current state only.
   vhci_hcd.
 - USB addons replaced: `usb-hotplug` / `usb-basic` (host /dev/bus mounts)
   removed from the catalog; blepoolsensor and cpc-workspace presets migrated
-  to the `usbip` feature + `usb-cgroup` addon (which also carries
-  `--cap-add SYS_ADMIN`: the runtime mounts sysfs read-only without it, and
-  vhci attach is a sysfs write). `usbip` skill added to pi-master.
+  to the `usbip` feature + `usb-cgroup` addon. The addon bind-mounts the
+  host's vhci sysfs dir onto its canonical path (rw bind — the container's
+  own sysfs is read-only, and vhci attach is a sysfs write; no SYS_ADMIN)
+  and carries the USB device-cgroup rule. `vhci_hcd` must be loaded on the
+  host before container creation. `usbip` skill added to pi-master.
 
 ## 2026-11-24
 

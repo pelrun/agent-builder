@@ -50,8 +50,9 @@ Detach when finished — the host regains the device only after detach.
 | `usbip: error: could not connect to ...:3240` | `usbipd` not running/reachable on the server machine | on the server: `usbipd -D` (listens on all interfaces; check firewall for port 3240) |
 | `usbip: error: import device` | device busy or already attached elsewhere | on the server: `usbip unbind -b <busid>`, re-bind; check `usbip port` for stale imports |
 | node exists but open fails with `EPERM` / operation not permitted | container lacks the USB device-cgroup rule | container must be built with the `usbip` feature (usb-cgroup addon); rebuild |
+| attach writes fail with `Read-only file system` | the vhci sysfs bind is missing — container built without the `usbip` feature, or `vhci_hcd` was not loaded on the host when the container was created | rebuild with the `usbip` feature; ensure `modprobe vhci_hcd` runs **before** container creation |
+| container fails to start with an error about `vhci_hcd.0` mount | `vhci_hcd` was not loaded on the host at container creation (the sysfs bind source is missing) | `modprobe vhci_hcd` on the host (persist via `/etc/modules-load.d`), then recreate the container |
 | open fails with `ENXIO` | node points at a device no longer attached | re-attach; `usbip-detach` cleans stale nodes |
-| `Read-only file system` on attach | container built without the usb-cgroup addon (sysfs is ro without SYS_ADMIN) | rebuild with the `usbip` feature |
 
 ## Host-side management (done manually, not from the container)
 
@@ -63,4 +64,12 @@ usbipd -D                  # daemon; listens on all interfaces, port 3240
 ```
 
 `vhci_hcd` must be loaded on the machine running the *container kernel*
-(the host): `modprobe vhci_hcd` (add to `modules-load.d` to persist).
+(the host) **before the container is created** — the container bind-mounts
+`/sys/devices/platform/vhci_hcd.0` at creation, so the module has to be
+there first:
+
+```bash
+modprobe vhci_hcd
+# persist (the usb-cgroup mount depends on it):
+echo vhci_hcd > /etc/modules-load.d/usbip.conf
+```

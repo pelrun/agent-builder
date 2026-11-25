@@ -183,7 +183,7 @@
 			"kind": "local",
 			"default": false,
 			"comment": "usbip client: manually attach network-shared USB devices",
-			"help": "Installs the usbip client plus usbip-list / usbip-attach / usbip-detach helpers. Attach manually with usbip-attach -b <busid>; the server is $USBIP_HOST or host.docker.internal, and may be the host or any remote machine running usbipd. The node is created in the container via mknod - no /dev/bus mount. Needs vhci_hcd on the kernel owner (host: modprobe vhci_hcd) and the usb-cgroup addon (auto-selected).",
+			"help": "Installs the usbip client plus usbip-list / usbip-attach / usbip-detach helpers. Attach manually with usbip-attach -b <busid>; the server is $USBIP_HOST or host.docker.internal, and may be the host or any remote machine running usbipd. The node is created in the container via mknod - no /dev/bus mount. Requires the usb-cgroup addon (auto-selected) and vhci_hcd loaded on the host BEFORE the container is created.",
 			"options": {},
 			"requires_addons": [
 				"usb-cgroup"
@@ -291,11 +291,13 @@
 		{
 			"id": "usb-cgroup",
 			"default": false,
-			"comment": "Allow dynamic USB device nodes (usbip attach) - no mounts",
-			"help": "Enables usbip-attach from inside the container: --cap-add SYS_ADMIN (the runtime mounts sysfs read-only without it, and vhci attach is a sysfs write) plus the device-cgroup rule for dynamically created USB nodes (major 189) so the mknod'd node can be opened. No mounts and no /dev/bus access. Required by the usbip feature.",
+			"comment": "Allow dynamic USB device nodes (usbip attach) - no mounts of /dev/bus",
+			"help": "Enables usbip-attach from inside the container: bind-mounts the host's vhci kobject dir onto its canonical path (rw bind, so the vhci attach sysfs write works despite the container's ro sysfs - no SYS_ADMIN) plus the device-cgroup rule for dynamically created USB nodes (major 189) so the mknod'd node can be opened. Requires vhci_hcd loaded on the host BEFORE container creation (the mount source must exist). Required by the usbip feature.",
 			"runArgs": [
-				"--cap-add=SYS_ADMIN",
 				"--device-cgroup-rule=c 189:* rmw"
+			],
+			"mounts": [
+				"source=/sys/devices/platform/vhci_hcd.0,target=/sys/devices/platform/vhci_hcd.0,type=bind"
 			]
 		},
 		{

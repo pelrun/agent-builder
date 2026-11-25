@@ -22,5 +22,6 @@ export USBIP_HOST=${USBIP_HOST}
 EOF
 
 echo "usbip client installed."
-echo "Note: attaching requires vhci_hcd on the kernel owner (the host):"
-echo "  modprobe vhci_hcd   # and usbipd listening on the network"
+echo "Note: the host must have vhci_hcd loaded BEFORE this container is created"
+echo "  (modprobe vhci_hcd, persist via /etc/modules-load.d), and usbipd"
+echo "  listening on the network for 'usbip-attach' to work."
