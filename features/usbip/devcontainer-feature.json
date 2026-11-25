@@ -1,0 +1,16 @@
+{
+	"name": "usbip client",
+	"id": "usbip",
+	"version": "1.0.0",
+	"description": "Installs the usbip client and container helpers so network-shared USB devices (host or remote machine) can be attached into the container. Device attachment is managed manually; requires the usb-cgroup addon.",
+	"options": {
+		"host": {
+			"type": "string",
+			"default": "host.docker.internal",
+			"description": "Default usbip server for the helper scripts (overridable via the USBIP_HOST environment variable or the -r argument)."
+		}
+	},
+	"installsAfter": [
+		"ghcr.io/devcontainers/features/common-utils"
+	]
+}

@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# usbip-attach [-r HOST] -b BUSID
+#
+# Attach a network-shared USB device into this container and create its
+# device node. The device may be shared by the host (default server:
+# $USBIP_HOST or host.docker.internal) or by any remote machine running
+# usbipd.
+#
+# Requires: vhci_hcd loaded on the kernel owner (the host), usbipd
+# reachable at HOST:3240, and the usb-cgroup addon's device rule so the
+# mknod'd node can be opened. Run 'usbip-detach' when done.
+
+set -euo pipefail
+
+HOST_ARG="${USBIP_HOST:-host.docker.internal}"
+BUSID=""
+
+while getopts ":r:b:h" opt; do
+	case $opt in
+	r) HOST_ARG=$OPTARG ;;
+	b) BUSID=$OPTARG ;;
+	h)
+		grep '^#' "$0" | sed 's/^# \{0,1\}//'
+		exit 0
+		;;
+	\?)
+		echo "usbip-attach: invalid option -$OPTARG" >&2
+		exit 1
+		;;
+	esac
+done
+
+if [ -z "$BUSID" ]; then
+	echo "usage: usbip-attach [-r host] -b <busid>   (list devices with usbip-list)" >&2
+	exit 1
+fi
+
+if [ "$(id -u)" -eq 0 ]; then SUDO=(); else SUDO=(sudo); fi
+
+if ! grep -qw vhci_hcd /proc/modules && [ ! -d /sys/devices/platform/vhci_hcd.0 ]; then
+	echo "ERROR: vhci_hcd is not loaded on the kernel owner (the host)." >&2
+	echo "  fix on the host:  modprobe vhci_hcd" >&2
+	exit 1
+fi
+
+snapshot() { ls /sys/bus/usb/devices 2>/dev/null | grep -v '^usb' | sort; }
+
+BEFORE=$(snapshot)
+
+echo "Attaching $BUSID from $HOST_ARG ..."
+"${SUDO[@]}" usbip attach -r "$HOST_ARG" -b "$BUSID"
+
+# wait for the kernel to register the device in sysfs
+DEV=""
+for _ in $(seq 1 20); do
+	DEV=$(comm -13 <(echo "$BEFORE") <(snapshot) | head -1 || true)
+	if [ -n "$DEV" ] && [ -r "/sys/bus/usb/devices/$DEV/busnum" ]; then
+		break
+	fi
+	DEV=""
+	sleep 0.25
+done
+
+if [ -z "$DEV" ]; then
+	echo "ERROR: attach completed but no new device appeared in sysfs." >&2
+	exit 1
+fi
+
+BUSNUM=$(cat "/sys/bus/usb/devices/$DEV/busnum")
+DEVNUM=$(cat "/sys/bus/usb/devices/$DEV/devnum")
+MINOR=$((BUSNUM * 128 + DEVNUM))
+NODE_DIR=$(printf '/dev/bus/usb/%03d' "$BUSNUM")
+NODE="$NODE_DIR/$(printf '%03d' "$DEVNUM")"
+
+# no /dev/bus mount needed: create the node locally (usbfs is a chrdev)
+"${SUDO[@]}" mkdir -p "$NODE_DIR"
+[ -e "$NODE" ] || "${SUDO[@]}" mknod "$NODE" c 189 "$MINOR"
+"${SUDO[@]}" chmod 666 "$NODE"
+
+echo "attached: $DEV (bus $BUSNUM dev $DEVNUM)"
+echo "node:     $NODE"
+echo "detach with: usbip-detach"

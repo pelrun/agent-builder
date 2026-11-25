@@ -177,6 +177,17 @@
 					]
 				}
 			]
+		},
+		{
+			"id": "usbip",
+			"kind": "local",
+			"default": false,
+			"comment": "usbip client: manually attach network-shared USB devices",
+			"help": "Installs the usbip client plus usbip-list / usbip-attach / usbip-detach helpers. Attach manually with usbip-attach -b <busid>; the server is $USBIP_HOST or host.docker.internal, and may be the host or any remote machine running usbipd. The node is created in the container via mknod - no /dev/bus mount. Needs vhci_hcd on the kernel owner (host: modprobe vhci_hcd) and the usb-cgroup addon (auto-selected).",
+			"options": {},
+			"requires_addons": [
+				"usb-cgroup"
+			]
 		}
 	],
 	"apt_groups": [
@@ -302,6 +313,15 @@
 			],
 			"conflicts": [
 				"usb-hotplug"
+			]
+		},
+		{
+			"id": "usb-cgroup",
+			"default": false,
+			"comment": "Allow dynamic USB device nodes (usbip attach) - no mounts",
+			"help": "Grants the device cgroup access to dynamically created USB nodes (major 189) so usbip-attach can create and open them inside the container. No mounts and no /dev/bus access. Required by the usbip feature.",
+			"runArgs": [
+				"--device-cgroup-rule=c 189:* rmw"
 			]
 		},
 		{

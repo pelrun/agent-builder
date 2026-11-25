@@ -24,6 +24,11 @@ CATALOG.md, AGENTS.md) describe current state only.
 - Catalog-wide `containerEnv` support; sets `TZ: Australia/Melbourne` in
   every generated container (the container clock was previously UTC, so
   commits recorded UTC dates after local midnight).
+- `usbip` feature + `usb-cgroup` addon: network-shared USB devices attach
+  manually from the container (host or remote machines) with zero
+  /dev/bus mounts — the helper mknods the node locally and the addon's
+  device-cgroup rule allows opening it. Host side: usbipd + modprobe
+  vhci_hcd.
 
 ## 2026-11-24
 

@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# usbip-detach [-r HOST] [PORT]
+#
+# Detach usbip devices and remove the local device nodes created by
+# usbip-attach. Without a PORT argument every imported device is detached.
+
+set -euo pipefail
+
+HOST_ARG="${USBIP_HOST:-host.docker.internal}"
+
+while getopts ":r:h" opt; do
+	case $opt in
+	r) HOST_ARG=$OPTARG ;;
+	h)
+		grep '^#' "$0" | sed 's/^# \{0,1\}//'
+		exit 0
+		;;
+	\?)
+		echo "usbip-detach: invalid option -$OPTARG" >&2
+		exit 1
+		;;
+	esac
+done
+shift $((OPTIND - 1))
+PORT=${1:-}
+
+if [ "$(id -u)" -eq 0 ]; then SUDO=(); else SUDO=(sudo); fi
+
+# map device -> busnum before detaching (sysfs entries vanish after)
+declare -A PRE_BUS
+for d in $(ls /sys/bus/usb/devices 2>/dev/null | grep -v '^usb'); do
+	if b=$(cat "/sys/bus/usb/devices/$d/busnum" 2>/dev/null); then
+		PRE_BUS[$d]=$b
+	fi
+done
+
+if [ -n "$PORT" ]; then
+	"${SUDO[@]}" usbip detach -r "$HOST_ARG" -p "$PORT"
+else
+	ports=$("${SUDO[@]}" usbip port 2>/dev/null | sed -n 's/^Port \([0-9]\+\):.*/\1/p' || true)
+	if [ -z "$ports" ]; then
+		echo "no imported usbip devices"
+		exit 0
+	fi
+	for p in $ports; do
+		"${SUDO[@]}" usbip detach -r "$HOST_ARG" -p "$p" || true
+	done
+fi
+
+sleep 0.5
+for d in $(ls /sys/bus/usb/devices 2>/dev/null | grep -v '^usb'); do
+	unset "PRE_BUS[$d]"
+done
+
+for d in "${!PRE_BUS[@]}"; do
+	bus=${PRE_BUS[$d]}
+	dir=$(printf '/dev/bus/usb/%03d' "$bus")
+	if [ -d "$dir" ]; then
+		"${SUDO[@]}" rm -f "$dir"/* 2>/dev/null || true
+		"${SUDO[@]}" rmdir "$dir" 2>/dev/null || true
+	fi
+	echo "detached: $d"
+done
+echo "done"

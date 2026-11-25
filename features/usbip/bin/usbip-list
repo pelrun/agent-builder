@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# usbip-list [-r HOST]
+#
+# List the devices exported by a usbip server ($USBIP_HOST or
+# host.docker.internal by default). Pick a BUSID for 'usbip-attach -b'.
+
+set -euo pipefail
+
+HOST_ARG="${USBIP_HOST:-host.docker.internal}"
+
+while getopts ":r:h" opt; do
+	case $opt in
+	r) HOST_ARG=$OPTARG ;;
+	h)
+		grep '^#' "$0" | sed 's/^# \{0,1\}//'
+		exit 0
+		;;
+	\?)
+		echo "usbip-list: invalid option -$OPTARG" >&2
+		exit 1
+		;;
+	esac
+done
+shift $((OPTIND - 1))
+
+exec usbip list -r "$HOST_ARG" "$@"

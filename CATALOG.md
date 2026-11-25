@@ -17,6 +17,7 @@ apt-packages entry last):
 | `renode` | local | portable simulator; version option |
 | `jadx` | local | dex decompiler; `requires_packages: openjdk-25-jdk` |
 | `ghidra` | local | see below |
+| `usbip` | local | usbip client + `usbip-list`/`usbip-attach`/`usbip-detach` helpers; manually attach devices shared by the host or any remote machine; creates the node in-container via mknod (no /dev/bus mount); `requires_addons: usb-cgroup` |
 
 Policies:
 
@@ -62,6 +63,7 @@ Default ✓ = pre-checked in the wizard.
 | `host-gateway` | ✓ | `host.docker.internal` resolves to the host |
 | `usb-hotplug` | | USB passthrough, incl. devices plugged in later or attached via usbip on the host (conflicts with `usb-basic`) |
 | `usb-basic` | | USB passthrough, devices present at start only (conflicts with `usb-hotplug`) |
+| `usb-cgroup` | | device-cgroup rule for dynamically created USB nodes (major 189) — no mounts; required by the `usbip` feature |
 | `host-ipc` | | share the host IPC namespace |
 | `gui-bridge` | | X11/Wayland GUI apps from the host display |
 | `pi-config` | ✓ | bind-mount the repo's `.devcontainer/pi` as `~/.pi` (materialized from `pi-master`) |
