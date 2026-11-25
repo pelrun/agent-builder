@@ -496,7 +496,21 @@ def verify_configs(gen, existing):
             elif k not in ga:
                 diffs.append(f"{section}: only in existing:  {k}")
             elif ga[k] != gb[k]:
-                diffs.append(f"{section}[{k}]: generated={ga[k]!r} existing={gb[k]!r}")
+                # package lists (the apt entry): report set differences like
+                # runArgs/mounts instead of dumping both full lists
+                pa, pb = ga[k].get("packages"), gb[k].get("packages")
+                if isinstance(pa, list) and isinstance(pb, list):
+                    only_a, only_b = sorted(set(pa) - set(pb)), sorted(set(pb) - set(pa))
+                    if only_a:
+                        diffs.append(f"{section}[{k}] packages: only in generated: {', '.join(only_a)}")
+                    if only_b:
+                        diffs.append(f"{section}[{k}] packages: only in existing:  {', '.join(only_b)}")
+                    oa = {ok: ov for ok, ov in ga[k].items() if ok != "packages"}
+                    ob = {ok: ov for ok, ov in gb[k].items() if ok != "packages"}
+                    if oa != ob:
+                        diffs.append(f"{section}[{k}]: generated={oa!r} existing={ob!r}")
+                else:
+                    diffs.append(f"{section}[{k}]: generated={ga[k]!r} existing={gb[k]!r}")
     for section in ("runArgs", "mounts"):
         ga, gb = set(a[section]), set(b[section])
         for x in sorted(ga - gb):
