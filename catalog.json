@@ -310,6 +310,14 @@
 			]
 		},
 		{
+			"id": "host-network",
+			"default": false,
+			"comment": "Share host network namespace (--network=host)",
+			"runArgs": [
+				"--network=host"
+			]
+		},
+		{
 			"id": "gui-bridge",
 			"default": false,
 			"comment": "X11/Wayland GUI apps from host display",
@@ -372,7 +380,8 @@
 				"source=${localEnv:HOME}/github/headunit,target=/workspaces/headunit,type=bind,consistency=cached",
 				"source=${localEnv:HOME}/github/cpc-workspace,target=/workspaces/cpc-workspace,type=bind,consistency=cached",
 				"source=${localEnv:HOME}/Projects/nas-cleanup,target=/workspaces/nas-cleanup,type=bind,consistency=cached",
-				"source=${localEnv:HOME}/Projects/blepoolsensor,target=/workspaces/blepoolsensor,type=bind,consistency=cached"
+				"source=${localEnv:HOME}/Projects/blepoolsensor,target=/workspaces/blepoolsensor,type=bind,consistency=cached",
+				"source=${localEnv:HOME}/Projects/cisco-camera-control,target=/workspaces/cisco-camera-control,type=bind,consistency=cached"
 			],
 			"commented_mounts": [
 				"source=${localEnv:HOME}/github/esphome,target=/workspaces/esphome,type=bind,consistency=cached"
@@ -396,7 +405,7 @@
 			},
 			"postCreateCommand": {
 				"git-credential-libsecret": "set -e; mkdir -p \"$HOME/.local/bin\"; if [ ! -x \"$HOME/.local/bin/git-credential-libsecret\" ]; then rm -rf \"$HOME/.cache/git-contrib\"; git clone --depth 1 https://github.com/git/git.git \"$HOME/.cache/git-contrib\"; make -C \"$HOME/.cache/git-contrib/contrib/credential/libsecret\"; install -m 0755 \"$HOME/.cache/git-contrib/contrib/credential/libsecret/git-credential-libsecret\" \"$HOME/.local/bin/\"; fi; git config --global --get credential.helper | grep -qx libsecret || git config --global --add credential.helper libsecret",
-				"credential-useHttpPath":"git config --global credential.useHttpPath true"
+				"credential-useHttpPath": "git config --global credential.useHttpPath true"
 			}
 		}
 	],
@@ -469,6 +478,32 @@
 				"git-credential-libsecret"
 			]
 		},
+		"cisco-camera-control": {
+			"name": "cisco-camera-control",
+			"features": {
+				"common-utils": {},
+				"node": {},
+				"python": {},
+				"pi": {},
+				"ghidra": {}
+			},
+			"apt_groups": [
+				"core"
+			],
+			"extra_packages": [
+				"cpio",
+				"mtools",
+				"qemu-user-static",
+				"squashfs-tools",
+				"u-boot-tools"
+			],
+			"addons": [
+				"host-gateway",
+				"host-network",
+				"pi-config",
+				"git-credential-libsecret"
+			]
+		},
 		"cpc-workspace": {
 			"name": "cpc-workspace",
 			"features": {
@@ -529,6 +564,45 @@
 				"pi-config",
 				"git-credential-libsecret",
 				"ssh-mount"
+			]
+		},
+		"silent-radio": {
+			"name": "silent-radio",
+			"features": {
+				"common-utils": {},
+				"pi": {
+					"version": "latest"
+				},
+				"node": {
+					"version": "26"
+				},
+				"python": {
+					"version": "os-provided"
+				},
+				"renode": {
+					"version": "1.17.0"
+				},
+				"ghidra": {
+					"mcpServer": "ghidrassist",
+					"version": "latest"
+				},
+				"usbip": {}
+			},
+			"apt_groups": [
+				"core",
+				"arm-embedded",
+				"arm-cross-binutils",
+				"logic-analyzer"
+			],
+			"addons": [
+				"host-gateway",
+				"pi-config",
+				"uv",
+				"git-credential-libsecret",
+				"usb-cgroup"
+			],
+			"extra_mounts": [
+				"source=~/Friends/ctrix/txshit,target=/workspaces/txshit,type=bind"
 			]
 		}
 	}

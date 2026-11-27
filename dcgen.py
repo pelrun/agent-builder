@@ -258,6 +258,56 @@ def catalog_index(catalog: dict):
 
 # ---------------------------------------------------------------- config building
 
+# leading home shorthand in a bind source: '~', '$HOME', '${HOME}' followed by
+# end-of-string or '/' (so '~user' or '$HOMEFOO' are left alone)
+_HOME_PREFIX = re.compile(r"^(~|\$\{?HOME\}?)(?=/|$)")
+# a source that still starts with a shell shorthand after normalization is
+# something docker cannot resolve; '${...}' (localEnv/localWorkspaceFolder)
+# is legitimate devcontainer syntax and exempt
+_UNRESOLVED_HOME = re.compile(r"^(~|\$(?!\{))")
+
+
+def localize_home(path: str) -> str:
+    """Rewrite a shell-style home shorthand to ${localEnv:HOME}.
+
+    Docker cannot resolve '~' or '$HOME' in bind sources; the devcontainer CLI
+    expands ${localEnv:HOME} on the host before docker ever sees the mount.
+    """
+    return _HOME_PREFIX.sub("${localEnv:HOME}", path)
+
+
+def normalize_extra_mount(m: str) -> tuple[str, str | None]:
+    """Normalize one extra-mount input into a full mount string.
+
+    Accepts a bare host path (shorthand for
+    source=<path>,target=/workspaces/<basename>,type=bind) or a full
+    source=...,target=... string. Home shorthands in the source are rewritten
+    via localize_home. Returns (mount, warning); warning is set when a bare
+    path is the home root itself (nothing below HOME to derive <basename>) or
+    when the source keeps a shell shorthand nothing will expand.
+    """
+    if "target=" in m:
+        head, sep, rest = m.partition("source=")
+        if not sep:
+            return m, None
+        source, comma, tail = rest.partition(",")
+        source = localize_home(source.strip())
+        warn = None
+        if _UNRESOLVED_HOME.match(source):
+            warn = (f"source '{source}' keeps an unexpanded shell shorthand that "
+                    "docker cannot resolve; use ${localEnv:...} instead")
+        return head + "source=" + source + comma + tail, warn
+    source = localize_home(m.rstrip("/"))
+    basename = os.path.basename(source)
+    if not basename or "{" in basename:
+        return m, (f"'{m}': nothing below HOME to derive /workspaces/<basename> from; "
+                   "enter the full mount (source=...,target=...) instead")
+    if _UNRESOLVED_HOME.match(source):
+        return m, (f"'{m}': unexpanded shell shorthand that docker cannot resolve; "
+                   "enter the full mount with a ${localEnv:...} source instead")
+    return f"source={source},target=/workspaces/{basename},type=bind", None
+
+
 def resolve_requires(catalog, spec, warnings):
     """Ensure features' hard requirements are present; add them with default options."""
     known = {f["id"] for f in catalog["features"]}
@@ -392,6 +442,9 @@ def build_config(catalog, spec):
                 spec["_materialize_pi"] = True
     # extra workspace mounts (spec/preset level), validated then merged last
     for m in spec.get("extra_mounts", []):
+        m, warn = normalize_extra_mount(m)
+        if warn:
+            warnings.append(warn)
         if "source=" not in m or "target=" not in m:
             warnings.append(f"extra mount '{m}' lacks source=/target= (may be malformed)")
         mounts.append(m)
@@ -730,7 +783,8 @@ def interactive_spec(catalog, ui, target, feats_src, base_spec=None):
     ]
     locked = ["core"] if "core" in groups else []
     selected_groups = ui.multi_select("apt package groups (merged into one apt-packages entry)", grp_items, locked=locked)
-    extra_raw = ui.ask("Extra apt packages (comma-separated, blank=none)", "")
+    extra_raw = ui.ask("Extra apt packages (comma-separated, blank=none)",
+                       ", ".join(base.get("extra_packages", [])))
     extra = [p.strip() for p in extra_raw.split(",") if p.strip()]
 
     # extra workspace mounts: one per prompt until blank; a bare host path is
@@ -741,11 +795,13 @@ def interactive_spec(catalog, ui, target, feats_src, base_spec=None):
         for m in extra_mounts:
             print(f"  - {m}")
     while True:
-        m = ui.ask("Extra workspace mount (blank=done; bare path targets /workspaces/<basename>)", "").strip()
+        m = ui.ask("Extra workspace mount (blank=done; bare path targets /workspaces/<basename>; ~ and $HOME map to ${localEnv:HOME})", "").strip()
         if not m:
             break
-        if "target=" not in m:
-            m = f"source={m},target=/workspaces/{os.path.basename(m.rstrip('/'))},type=bind"
+        m, warn = normalize_extra_mount(m)
+        if warn:
+            print(warn)
+            continue
         extra_mounts.append(m)
 
     addon_items = [
@@ -831,7 +887,7 @@ def preset_spec(catalog, preset_name, target):
         "image": p.get("image", catalog.get("base_image")),
         "features": dict(p.get("features", {})),
         "apt_groups": list(p.get("apt_groups", [])),
-        "extra_packages": [],
+        "extra_packages": list(p.get("extra_packages", [])),
         "addons": list(p.get("addons", [])),
         "commented_features": list(p.get("commented_features", [])),
         "commented_mounts": list(p.get("commented_mounts", [])),
@@ -858,6 +914,8 @@ def preset_profile(spec):
             profile[key] = spec[key]
     if spec.get("extra_mounts"):
         profile["extra_mounts"] = list(spec["extra_mounts"])
+    if spec.get("extra_packages"):
+        profile["extra_packages"] = list(spec["extra_packages"])
     return profile
 
 
@@ -871,9 +929,6 @@ def save_preset(catalog_path, catalog, spec, ui):
             f"Preset '{pid}' already exists. Overwrite?", default=False):
         print("aborted")
         return
-    if spec.get("extra_packages"):
-        print(f"WARNING: extra packages ({', '.join(spec['extra_packages'])}) cannot be "
-              "represented in a preset - consider an apt group.", file=sys.stderr)
     if spec.get("image") and spec["image"] != catalog.get("base_image"):
         print(f"WARNING: custom image {spec['image']} is not captured by presets.", file=sys.stderr)
     catalog["presets"][pid] = preset_profile(spec)
@@ -967,6 +1022,8 @@ def main():
             print(f"ADDON    {a['id']:18} default={'y' if a.get('default') else 'n'}{' hidden' if a.get('hidden') else ''}  {a.get('comment', '')}{'  (+help)' if a.get('help') else ''}")
         for name, p in catalog["presets"].items():
             extra = f"  +{len(p['extra_mounts'])} extra mounts" if p.get("extra_mounts") else ""
+            if p.get("extra_packages"):
+                extra += f"  +{len(p['extra_packages'])} extra packages" if extra else f"  apt+{len(p['extra_packages'])} extras"
             print(f"PRESET   {name:15} features={','.join(p['features'])}  apt={'+'.join(p['apt_groups'])}  addons={','.join(p['addons'])}{extra}")
         return 0
 

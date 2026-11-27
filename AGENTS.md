@@ -23,6 +23,9 @@ presets needs no code changes. Rules:
   `agent-builder` preset.
 - `locked` entries are guarantees, not defaults: always installed, hidden
   from pickers and prompts. Do not remove or weaken them.
+- Per-agent packages and mounts go straight into that agent's preset
+  (`extra_packages` / `extra_mounts`); promote them into an apt group or
+  addon only once multiple presets show the same need.
 - `comment` is the one-line wizard description (keep it to one line);
   put detail into the optional `help` string (shown on `h` in the pickers).
   The `//` comments in generated configs use `comment` only.
@@ -92,9 +95,13 @@ Addons carry `comment` / `help` like features.
 ### `presets`
 Named, non-interactive selections reproducing existing repo configs:
 `name`, `image`, `features` (with options), `apt_groups`, `addons`,
-`extra_mounts` (workspace mounts merged after addon mounts; the wizard
+`extra_packages` (per-agent packages merged into the apt entry after addon
+packages), `extra_mounts` (workspace mounts merged after addon mounts; the wizard
 prompts for them, accepting bare host paths as shorthand for
-`source=<path>,target=/workspaces/<basename>,type=bind`),
+`source=<path>,target=/workspaces/<basename>,type=bind`; leading `~`,
+`$HOME`, `${HOME}` in the source are rewritten to `${localEnv:HOME}` at
+prompt time and again at generation time, since docker cannot resolve shell
+shorthands in bind sources),
 `commented_features` / `commented_mounts` / `commented_postcreate`
 (deliberately-disabled entries emitted as `// {...}` lines so they survive
 regeneration as documentation).

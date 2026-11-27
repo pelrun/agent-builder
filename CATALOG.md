@@ -63,6 +63,7 @@ Default ✓ = pre-checked in the wizard.
 | `host-gateway` | ✓ | `host.docker.internal` resolves to the host |
 | `usb-cgroup` | | hidden from the wizard; rw bind of the host vhci sysfs dir + device-cgroup rule for USB nodes (major 189) — no /dev/bus mounts; auto-selected by the `usbip` feature; needs `vhci_hcd` loaded on the host **before container creation** |
 | `host-ipc` | | share the host IPC namespace |
+| `host-network` | | share the host network namespace (`--network=host`) — LAN-local devices (cameras, debug probes) reachable without published ports |
 | `gui-bridge` | | X11/Wayland GUI apps from the host display |
 | `pi-config` | ✓ | bind-mount the repo's `.devcontainer/pi` as `~/.pi` (materialized from `pi-master`) |
 | `ssh-mount` | | bind-mount host `~/.ssh` — for HTTPS git auth prefer `git-credential-libsecret` |
@@ -78,6 +79,7 @@ Default ✓ = pre-checked in the wizard.
 | `agent-builder` | `polywork-mounts` (cross-repo mounts, machine-specific) |
 | `blackmagic` | arm-embedded group |
 | `blepoolsensor` | renode 1.17.0, ghidra feature (`MCPSERVER=ghidramcp`), usbip (usb-cgroup), jdk/arm-embedded/logic-analyzer groups, host-ipc, gui-bridge, ssh-mount, uv |
+| `cisco-camera-control` | ghidra feature (default `ghidrassist` MCP), host-network, firmware/image-inspection packages (cpio, mtools, qemu-user-static, squashfs-tools, u-boot-tools) |
 | `cpc-workspace` | cpc-build group, usbip (usb-cgroup) |
 | `headunit` | ghidra + jadx 1.5.6, arm-embedded/arm-cross-binutils/android-re groups |
 | `nas-cleanup` | ssh-mount |

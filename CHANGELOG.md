@@ -3,6 +3,31 @@
 Historical record of notable changes. The primary docs (README.md,
 CATALOG.md, AGENTS.md) describe current state only.
 
+## 2026-11-26
+
+- Onboarded `cisco-camera-control` as a catalog preset: common base + ghidra
+  (default `ghidrassist` MCP) and the new `host-network` addon
+  (`--network=host`, for LAN-local camera access). Regenerating the repo
+  adds the fleet-wide `TZ` containerEnv and `git-credential-libsecret`
+  (fleet default, absent from its hand-maintained config); `--verify`
+  passes.
+- Presets can now carry `extra_packages` (merged into the apt entry after
+  addon packages; round-tripped by `--show`/save-preset, shown by `--list`,
+  and pre-seeded by `--modify` — previously the wizard silently dropped a
+  base spec's extras). The "cannot be captured" save-preset warning is gone.
+  Policy: per-agent packages/mounts go straight into the preset; promote to
+  an apt group or addon only when multiple presets share the need.
+- Folded agent drift back in: `polywork-mounts` gains the
+  cisco-camera-control repo mount; the cisco preset carries its
+  firmware-inspection extras (cpio, mtools, qemu-user-static,
+  squashfs-tools, u-boot-tools). Both repos regenerate to `--verify` OK.
+- Extra-mount inputs now rewrite home shorthands to `${localEnv:HOME}`
+  (leading `~`, `$HOME`, `${HOME}` in the source; applied in the wizard and
+  again at generation time for stored presets). Bare home roots (`~`,
+  `$HOME`) and sources that keep a shell shorthand (`~user/...`) warn —
+  docker cannot resolve shell expansion in bind sources; only
+  `${localEnv:...}`/`${localWorkspaceFolder}` survive verbatim.
+
 ## 2026-11-25
 
 - usbip investigation resolved: device attachment is managed on the host

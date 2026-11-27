@@ -82,7 +82,8 @@ python3 dcgen.py --sync-pi              # refresh ./.devcontainer/pi from pi-mas
 4. **apt package groups** — logical groups that merge into one deduplicated
    `apt-packages` entry (locked groups are always on). Afterwards: free-text
    extra packages, then extra workspace mounts (one per prompt; a bare host
-   path targets `/workspaces/<basename>`).
+   path targets `/workspaces/<basename>`, with `~`/`$HOME` rewritten to
+   `${localEnv:HOME}` so docker can resolve the bind source).
 5. **Environment addons** — runArgs / mounts / containerEnv /
    postCreateCommand fragments. Conflicting selections warn;
    unselected recommendations are noted.
